@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biological Sciences Study Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .study-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .study-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        /* Flashcard Flip Logic */
+        .flashcard-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        .flashcard-front, .flashcard-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+        /* Overlay Animation */
+        #flashcard-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .perspective {
+            perspective: 1000px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+    <!-- Hero Section -->
+    <header class="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white py-16 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
+                Biological Sciences <span class="text-emerald-400">Study Portal</span>
+            </h1>
+            <p class="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto leading-relaxed">
+                Comprehensive interactive guides and active recall tools for advanced biological academic mastery.
+            </p>
+            <p class="mt-4 text-emerald-400 font-medium tracking-wide uppercase text-xs sm:text-sm">
+                Developed by Jheyrick Baliguat
+            </p>
+        </div>
+    </header>
+
+    <!-- Navigation Shortcuts -->
+    <div class="max-w-6xl mx-auto px-4 -mt-8 flex justify-center gap-4">
+        <a href="#modules" class="bg-white px-6 py-3 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:text-emerald-600 transition-colors border border-slate-100">📚 Modules</a>
+        <button onclick="openFlashcardDeck('general')" class="bg-white px-6 py-3 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:text-emerald-600 transition-colors border border-slate-100">🗂️ Flashcards</button>
+        <a href="#practice" class="bg-white px-6 py-3 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:text-emerald-600 transition-colors border border-slate-100">📝 Practice Tests</a>
+    </div>
+
+    <!-- Main Content: Modules -->
+    <main class="max-w-6xl mx-auto px-4 py-16" id="modules">
+        <div class="flex items-center justify-between mb-10">
+            <h2 class="text-3xl font-bold text-slate-900">Study Modules</h2>
+            <div class="h-1 flex-grow mx-8 bg-slate-200 rounded-full hidden md:block"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Microbiology -->
+            <a href="microbiology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-3xl mb-6">🧫</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Microbiology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Viral replication, bacterial pathogenesis, and microbial metabolic diversity.</p>
+                <span class="mt-auto text-purple-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- ChemBio / Biochemistry -->
+            <a href="chembio.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center text-3xl mb-6">🧪</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Chemical Biology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Enzyme kinetics, metabolic pathways, and molecular signaling interfaces.</p>
+                <span class="mt-auto text-indigo-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- Zoology -->
+            <a href="zoology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center text-3xl mb-6">🦁</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Zoology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Animal physiology, comparative anatomy, and ethological behavior patterns.</p>
+                <span class="mt-auto text-orange-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- Botany -->
+            <a href="botany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center text-3xl mb-6">🌸</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Botany</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Plant morphology, reproductive strategies, and taxonomic classification.</p>
+                <span class="mt-auto text-emerald-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- Plant Physiology -->
+            <a href="physiology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center text-3xl mb-6">🌿</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Plant Physiology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Photosynthetic Z-scheme, nutrient transport, and water potential dynamics.</p>
+                <span class="mt-auto text-green-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- Evolutionary Biology -->
+            <a href="evolution.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center text-3xl mb-6">🦴</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Evolutionary Biology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Natural selection, population genetics, and phylogenetics.</p>
+                <span class="mt-auto text-amber-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+ <!-- Genetics -->
+            <a href="botany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center text-3xl mb-6">🌸</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">genetics</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">The scientific study of heredity, examining how genes—segments of DNA—pass traits from parents to offspring, influencing characteristics like physical appearance, health, and behavior.</p>
+                <span class="mt-auto text-emerald-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+  <!-- Anatomy and Physiology -->
+            <a href="zoology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center text-3xl mb-6">🦁</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Anatomy and Physiology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4"> the study of the structure and physical relationships of body parts, while physiology is the study of how those parts function to maintain life.</p>
+                <span class="mt-auto text-orange-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+<!-- Cell and Molecular Biology -->
+            <a href="chembio.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center text-3xl mb-6">🧪</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Cell and Molecular Biology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">an interdisciplinary field investigating how molecules (DNA, RNA, proteins) function within cells to enable organismal life.</p>
+                <span class="mt-auto text-indigo-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+ <!-- Developmental Biology -->
+            <a href="botany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center text-3xl mb-6">🌸</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Developmental Biology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">the study of the process by which organisms grow and develop, transforming a single fertilized egg into a complex, multicellular adult.</p>
+                <span class="mt-auto text-emerald-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+
+
+ <!-- Ecology -->
+            <a href="evolution.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center text-3xl mb-6">🦴</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Ecology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">The scientific study of how living organisms (biotic) interact with each other and their non-living (abiotic) physical environment..</p>
+                <span class="mt-auto text-amber-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+
+            <!-- Plant Growth and development -->
+            <a href="ethnobotany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-stone-100 rounded-xl flex items-center justify-center text-3xl mb-6">🏺</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Plant Growth and development</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">A coordinated process involving seed germination, vegetative growth (roots, stems, leaves), and reproductive phases (flowering, fruiting), driven by cell division, enlargement, and differentiation.</p>
+                <span class="mt-auto text-stone-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- General Biology -->
+            <a href="genbio.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div class="w-14 h-14 bg-sky-100 rounded-xl flex items-center justify-center text-3xl mb-6">🔬</div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">General Biology</h3>
+                <p class="text-slate-600 text-sm leading-relaxed mb-4">Cell structure, genetics, and the fundamental principles of living systems.</p>
+                <span class="mt-auto text-sky-600 text-xs font-bold uppercase tracking-wider">Open Study Guide →</span>
+            </a>
+
+            <!-- Assessment Center -->
+            <div class="study-card bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-lg text-white" id="practice">
+                <div class="w-14 h-14 bg-emerald-500 rounded-xl flex items-center justify-center text-3xl mb-6">📝</div>
+                <h3 class="text-xl font-bold mb-2">Assessment Center</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Comprehensive review materials and simulated exams for core biological principles.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Flashcard Overlay -->
+    <div id="flashcard-overlay" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md p-4 text-white">
+        <button onclick="closeFlashcardDeck()" class="absolute top-8 right-8 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-3xl font-light transition-all">
+            &times;
+        </button>
+
+        <div class="max-w-4xl w-full flex flex-col items-center">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2">Active Recall Session</h2>
+                <p class="text-slate-400" id="deck-description">Master biological concepts through spaced repetition.</p>
+            </div>
+
+            <div id="flashcard-container" class="flashcard w-full max-w-md h-80 perspective group cursor-pointer" onclick="this.classList.toggle('flipped')">
+                <div class="flashcard-inner relative w-full h-full text-center">
+                    <div class="flashcard-front absolute w-full h-full bg-white rounded-3xl shadow-2xl flex flex-col items-center justify-center p-10 border border-slate-200">
+                        <span id="deck-name" class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">Select a Deck</span>
+                        <h3 id="card-question" class="text-2xl font-bold text-slate-800 leading-tight">...</h3>
+                        <p class="text-xs text-slate-400 mt-6">(Click to reveal answer)</p>
+                    </div>
+                    <div class="flashcard-back absolute w-full h-full bg-emerald-600 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-10 text-white">
+                        <h3 id="card-answer" class="text-xl font-medium leading-relaxed">...</h3>
+                        <p class="text-xs text-emerald-200 mt-6">(Click to flip back)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6 mt-10">
+                <button onclick="prevCard()" class="w-14 h-14 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-xl transition-all">&larr;</button>
+                <div class="text-sm font-mono text-slate-400" id="card-counter">0 / 0</div>
+                <button onclick="nextCard()" class="w-14 h-14 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 rounded-full text-xl transition-all shadow-lg shadow-emerald-900/40">&rarr;</button>
+            </div>
+
+            <!-- Quick Deck Switcher -->
+            <div class="mt-12 flex flex-wrap justify-center gap-3">
+                <button onclick="openFlashcardDeck('microbiology')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs font-bold rounded-lg border border-white/10 transition-colors">Microbiology</button>
+                <button onclick="openFlashcardDeck('chembio')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs font-bold rounded-lg border border-white/10 transition-colors">ChemBio</button>
+                <button onclick="openFlashcardDeck('zoology')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs font-bold rounded-lg border border-white/10 transition-colors">Zoology</button>
+                <button onclick="openFlashcardDeck('botany')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs font-bold rounded-lg border border-white/10 transition-colors">Botany</button>
+                <button onclick="openFlashcardDeck('evolution')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs font-bold rounded-lg border border-white/10 transition-colors">Evolution</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-12">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <div class="inline-flex items-center gap-2 mb-4 bg-slate-50 px-4 py-2 rounded-full border border-slate-200">
+                <span class="text-emerald-600">©</span>
+                <span class="text-slate-900 font-bold tracking-tight">Jheyrick Baliguat</span>
+            </div>
+            <p class="text-slate-500 text-sm">Advanced Biological Sciences Review. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. THE 200-QUESTION UNDERGRADUATE DATABASE ---
+        const database = [
+            // BIOCHEMISTRY BASICS
+            { category: "Biochem", q: "What are the building blocks (monomers) of proteins?", a: "Amino acids." },
+            { category: "Biochem", q: "What is the main function of carbohydrates in the body?", a: "To provide a primary source of quick, readily available energy." },
+            { category: "Biochem", q: "Which nucleic acid is single-stranded and contains the base uracil?", a: "RNA (Ribonucleic acid)." },
+            { category: "Biochem", q: "What is the term for a biological catalyst that speeds up chemical reactions in cells?", a: "Enzyme." },
+            { category: "Biochem", q: "What happens to an enzyme when it is exposed to extreme heat or drastically incorrect pH?", a: "It denatures (loses its specific 3D shape and functional active site)." },
+            { category: "Biochem", q: "What type of macromolecule includes fats, oils, and waxes, and is highly hydrophobic?", a: "Lipids." },
+            { category: "Biochem", q: "By what type of chemical reaction are biological polymers synthesized (built)?", a: "Dehydration synthesis (or condensation reaction), which removes a water molecule." },
+            { category: "Biochem", q: "What reaction breaks down polymers into monomers using water?", a: "Hydrolysis." },
+            { category: "Biochem", q: "What molecule is known as the universal energy currency of the cell?", a: "ATP (Adenosine Triphosphate)." },
+            { category: "Biochem", q: "What type of strong chemical bond involves the sharing of electron pairs between atoms?", a: "Covalent bond." },
+            { category: "Biochem", q: "What weak bonds form between water molecules, giving water its unique properties like high surface tension?", a: "Hydrogen bonds." },
+            { category: "Biochem", q: "What do we call atoms of the same element that have different numbers of neutrons?", a: "Isotopes." },
+            { category: "Biochem", q: "On the pH scale, what indicates an acidic solution?", a: "A pH value less than 7." },
+            { category: "Biochem", q: "What is a buffer in a biological system?", a: "A substance that minimizes changes in pH by accepting or donating hydrogen ions." },
+            { category: "Biochem", q: "What is the structural difference between saturated and unsaturated fatty acids?", a: "Saturated fatty acids have no double bonds (straight chains), while unsaturated have one or more double bonds (kinked chains)." },
+            { category: "Biochem", q: "What is the primary structure of a protein?", a: "The linear sequence of amino acids in the polypeptide chain." },
+            { category: "Biochem", q: "What are the three components of a nucleotide?", a: "A nitrogenous base, a pentose (5-carbon) sugar, and a phosphate group." },
+            { category: "Biochem", q: "What is allosteric regulation?", a: "When an enzyme's function at the active site is affected by the binding of a regulatory molecule at a separate site." },
+            { category: "Biochem", q: "What is feedback inhibition?", a: "A metabolic pathway is halted by the inhibitory binding of its end product to an enzyme that acts early in the pathway." },
+            { category: "Biochem", q: "What characterizes an exergonic reaction?", a: "It is a spontaneous reaction that releases energy (negative delta G)." },
+            { category: "Biochem", q: "What characterizes an endergonic reaction?", a: "It is a non-spontaneous reaction that requires an input of energy (positive delta G)." },
+            { category: "Biochem", q: "What is activation energy?", a: "The initial energy investment required to start a chemical reaction." },
+            { category: "Biochem", q: "What is the difference between catabolic and anabolic pathways?", a: "Catabolic pathways break down molecules to release energy; anabolic pathways consume energy to build complex molecules." },
+            { category: "Biochem", q: "In an oxidation-reduction (redox) reaction, what does oxidation mean?", a: "The loss of electrons." },
+            { category: "Biochem", q: "What is an isomer?", a: "Compounds that have the same chemical formula but different structural arrangements." },
+
+            // CELL BIOLOGY
+            { category: "CellMol", q: "What is the function of the mitochondria?", a: "It is the 'powerhouse' of the cell, generating most of the cell's supply of ATP through cellular respiration." },
+            { category: "CellMol", q: "Which organelle is responsible for modifying, sorting, and packaging proteins for secretion?", a: "The Golgi apparatus." },
+            { category: "CellMol", q: "What is the difference between rough and smooth endoplasmic reticulum (ER)?", a: "Rough ER has ribosomes on its surface (makes proteins); Smooth ER lacks ribosomes (makes lipids and detoxifies)." },
+            { category: "CellMol", q: "What is osmosis?", a: "The passive diffusion of water across a selectively permeable membrane from an area of high water concentration to low water concentration." },
+            { category: "CellMol", q: "What is the end result of mitosis?", a: "Two identical diploid daughter cells." },
+            { category: "CellMol", q: "What is the function of the nucleus?", a: "It houses the cell's genetic material (DNA) and coordinates cell activities like growth and reproduction." },
+            { category: "CellMol", q: "What cellular structures are responsible for protein synthesis (translation)?", a: "Ribosomes." },
+            { category: "CellMol", q: "Which organelle contains hydrolytic enzymes used to digest macromolecules and cellular debris?", a: "Lysosome." },
+            { category: "CellMol", q: "What is the function of peroxisomes?", a: "They break down fatty acids and detoxify harmful substances (like hydrogen peroxide)." },
+            { category: "CellMol", q: "What network of fibers provides structural support and facilitates movement within the cell?", a: "The cytoskeleton (microtubules, microfilaments, intermediate filaments)." },
+            { category: "CellMol", q: "What is active transport?", a: "The movement of substances across a cell membrane against their concentration gradient, requiring energy (ATP)." },
+            { category: "CellMol", q: "What is facilitated diffusion?", a: "The passive transport of specific molecules across a cell membrane via integral membrane proteins." },
+            { category: "CellMol", q: "What process do cells use to engulf large particles or bulk fluids from the outside environment?", a: "Endocytosis (phagocytosis for solids, pinocytosis for liquids)." },
+            { category: "CellMol", q: "What happens to an animal cell placed in a hypotonic solution?", a: "It swells and may burst (lyse) because water rushes into the cell." },
+            { category: "CellMol", q: "What model describes the cell membrane as a flexible layer of lipid molecules interspersed with large protein molecules?", a: "The Fluid Mosaic Model." },
+            { category: "CellMol", q: "What molecule regulates membrane fluidity in animal cells?", a: "Cholesterol." },
+            { category: "CellMol", q: "What is the difference between integral and peripheral membrane proteins?", a: "Integral proteins penetrate the hydrophobic core of the lipid bilayer; peripheral proteins are loosely bound to the surface." },
+            { category: "CellMol", q: "What type of cell junction forms a waterproof seal between neighboring animal cells?", a: "Tight junctions." },
+            { category: "CellMol", q: "What type of cell junction allows for direct communication (exchange of ions) between adjacent animal cells?", a: "Gap junctions." },
+            { category: "CellMol", q: "What are the four main stages of the cell cycle?", a: "G1 (Gap 1), S (Synthesis), G2 (Gap 2), and M (Mitosis/Meiosis)." },
+            { category: "CellMol", q: "During which phase of the cell cycle is DNA replicated?", a: "S phase (Synthesis phase) of Interphase." },
+            { category: "CellMol", q: "What is apoptosis?", a: "Programmed, orderly cell death." },
+            { category: "CellMol", q: "Where does glycolysis occur in the cell?", a: "The cytoplasm (cytosol)." },
+            { category: "CellMol", q: "What is the end product of glycolysis?", a: "Two molecules of pyruvate (plus 2 net ATP and 2 NADH)." },
+            { category: "CellMol", q: "In the absence of oxygen, what process allows glycolysis to continue by regenerating NAD+?", a: "Fermentation (lactic acid or alcoholic)." },
+
+            // GENETICS
+            { category: "Genetics", q: "What is the difference between genotype and phenotype?", a: "Genotype is the genetic makeup (e.g., Bb), while phenotype is the observable physical trait (e.g., brown eyes)." },
+            { category: "Genetics", q: "What is an allele?", a: "A variant form of a gene located at a specific position on a specific chromosome." },
+            { category: "Genetics", q: "If a trait is autosomal recessive, what genotype must an individual have to express the trait?", a: "Homozygous recessive (e.g., 'aa')." },
+            { category: "Genetics", q: "What does the Central Dogma of biology state?", a: "Genetic information flows in one direction: from DNA to RNA to Protein." },
+            { category: "Genetics", q: "What is a mutation?", a: "A permanent, random change in the nucleotide sequence of an organism's DNA." },
+            { category: "Genetics", q: "What is Mendel's Law of Segregation?", a: "The two alleles for a heritable character segregate (separate) during gamete formation and end up in different gametes." },
+            { category: "Genetics", q: "What is Mendel's Law of Independent Assortment?", a: "Alleles of two (or more) different genes get sorted into gametes independently of one another." },
+            { category: "Genetics", q: "What genetic scenario occurs when a heterozygote displays a phenotype intermediate between the two homozygous parents?", a: "Incomplete dominance." },
+            { category: "Genetics", q: "What genetic scenario occurs when both alleles are fully expressed in the heterozygote (e.g., AB blood type)?", a: "Codominance." },
+            { category: "Genetics", q: "What is epistasis?", a: "When the phenotypic expression of one gene modifies or masks the expression of another independently inherited gene." },
+            { category: "Genetics", q: "Why are X-linked recessive disorders more common in males?", a: "Males have only one X chromosome, so a single recessive allele will cause the disorder." },
+            { category: "Genetics", q: "What is nondisjunction?", a: "The failure of homologous chromosomes or sister chromatids to separate properly during cell division." },
+            { category: "Genetics", q: "What condition arises from having an abnormal number of a particular chromosome (e.g., Trisomy 21)?", a: "Aneuploidy." },
+            { category: "Genetics", q: "What enzyme is responsible for synthesizing a new DNA strand by adding nucleotides to a primer?", a: "DNA Polymerase." },
+            { category: "Genetics", q: "What enzyme 'unzips' the DNA double helix during replication?", a: "Helicase." },
+            { category: "Genetics", q: "What enzyme seals the nicks between Okazaki fragments on the lagging strand?", a: "DNA Ligase." },
+            { category: "Genetics", q: "What is transcription?", a: "The synthesis of an RNA molecule from a DNA template." },
+            { category: "Genetics", q: "What is translation?", a: "The synthesis of a polypeptide (protein) using the genetic information encoded in an mRNA molecule." },
+            { category: "Genetics", q: "What is the function of transfer RNA (tRNA)?", a: "To read the mRNA codon and bring the corresponding amino acid to the ribosome." },
+            { category: "Genetics", q: "During mRNA processing in eukaryotes, which segments are removed (spliced out)?", a: "Introns (non-coding regions)." },
+            { category: "Genetics", q: "What is an operon in bacteria?", a: "A cluster of functionally related genes controlled by a single promoter and operator." },
+            { category: "Genetics", q: "Is the lac operon typically inducible or repressible?", a: "Inducible (usually off, turns on when lactose is present)." },
+            { category: "Genetics", q: "What is epigenetics?", a: "Heritable changes in gene expression that do not involve changes to the underlying DNA sequence (e.g., DNA methylation)." },
+            { category: "Genetics", q: "What is a silent mutation?", a: "A point mutation that changes a codon but still codes for the same amino acid, causing no change in the protein." },
+            { category: "Genetics", q: "What is a missense mutation?", a: "A substitution mutation that results in a codon that codes for a different amino acid." },
+
+            // MICROBIOLOGY
+            { category: "Microbiology", q: "What is the main difference between prokaryotic and eukaryotic cells?", a: "Prokaryotes lack a membrane-bound nucleus; eukaryotes have them." },
+            { category: "Microbiology", q: "Are viruses considered living organisms?", a: "Generally no, because they cannot reproduce or carry out metabolic processes without a host cell." },
+            { category: "Microbiology", q: "What do antibiotics target?", a: "Bacterial infections. They are ineffective against viruses." },
+            { category: "Microbiology", q: "What are the three basic shapes of bacteria?", a: "Coccus (spherical), Bacillus (rod-shaped), and Spirillum (spiral)." },
+            { category: "Microbiology", q: "What phase of bacterial growth is characterized by rapid, exponential cell division?", a: "The log (exponential) phase." },
+
+            // BOTANY
+            { category: "Botany", q: "What is the simplified chemical equation for photosynthesis?", a: "6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2" },
+            { category: "Botany", q: "What is the role of stomata in plant leaves?", a: "Gas exchange (CO2 in, O2 out) and transpiration." },
+            { category: "Botany", q: "Which plant hormone is a gas that triggers fruit ripening?", a: "Ethylene." },
+            { category: "Botany", q: "Which plant hormone is responsible for phototropism?", a: "Auxin." },
+            { category: "Botany", q: "Where does the Calvin cycle occur?", a: "In the stroma of the chloroplast." },
+
+            // ZOOLOGY & ANATOMY
+            { category: "Zoology", q: "What is homeostasis?", a: "Maintaining a stable internal environment despite external changes." },
+            { category: "Zoology", q: "What is the basic functional cell of the nervous system?", a: "The neuron (nerve cell)." },
+            { category: "Zoology", q: "Which blood vessels carry oxygenated blood AWAY from the heart?", a: "Arteries (except the pulmonary artery)." },
+            { category: "Zoology", q: "What is the difference between an endotherm and an ectotherm?", a: "Endotherms generate heat internally; Ectotherms rely on environmental heat." },
+            { category: "Zoology", q: "What is the functional unit of the kidney?", a: "The nephron." },
+
+            // TAXONOMY
+            { category: "Taxonomy", q: "What are the three major domains of life?", a: "Bacteria, Archaea, and Eukarya." },
+            { category: "Taxonomy", q: "What is the correct order of the taxonomic hierarchy?", a: "Domain, Kingdom, Phylum, Class, Order, Family, Genus, Species." },
+            { category: "Taxonomy", q: "Who is considered the father of modern taxonomy?", a: "Carl Linnaeus." },
+            { category: "Taxonomy", q: "What constitutes a clade?", a: "A common ancestor and ALL of its descendants." },
+            { category: "Taxonomy", q: "What evolutionary process leads to analogous structures?", a: "Convergent evolution." }
+        ];
+
+        // --- 2. DECK MAPPING LOGIC ---
+        const flashcardDecks = {
+            'physiology': database.filter(i => ["Biochem", "CellMol", "Microbiology"].includes(i.category)),
+            'genetics': database.filter(i => i.category === 'Genetics'),
+            'ecology': database.filter(i => i.category === 'Taxonomy'),
+            'anatomy': database.filter(i => ["Zoology", "DevBio"].includes(i.category)),
+            'phytohormones': database.filter(i => i.category === 'Botany')
+        };
+
+        let currentDeckData = [];
+        let cardIndex = 0;
+
+        function openFlashcardDeck(deckId) {
+            currentDeckData = flashcardDecks[deckId] || database;
+            cardIndex = 0;
+            const overlay = document.getElementById('flashcard-overlay');
+            const deckName = document.getElementById('deck-name');
+            
+            deckName.textContent = deckId.toUpperCase() + " Deck";
+            overlay.classList.remove('hidden');
+            overlay.classList.add('active');
+            
+            updateCard();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFlashcardDeck() {
+            const overlay = document.getElementById('flashcard-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateCard() {
+            const card = currentDeckData[cardIndex];
+            const flashcardEl = document.getElementById('flashcard-container');
+            const counterEl = document.getElementById('card-counter');
+            
+            flashcardEl.classList.remove('flipped');
+            counterEl.textContent = (cardIndex + 1) + " / " + (currentDeckData.length || 0);
+            
+            setTimeout(() => {
+                document.getElementById('card-question').textContent = card ? card.q : "No Questions Available";
+                document.getElementById('card-answer').textContent = card ? card.a : "N/A";
+            }, 150);
+        }
+
+        function nextCard() {
+            if (currentDeckData.length === 0) return;
+            cardIndex = (cardIndex + 1) % currentDeckData.length;
+            updateCard();
+        }
+
+        function prevCard() {
+            if (currentDeckData.length === 0) return;
+            cardIndex = (cardIndex - 1 + currentDeckData.length) % currentDeckData.length;
+            updateCard();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFlashcardDeck();
+            if (e.key === 'ArrowRight') nextCard();
+            if (e.key === 'ArrowLeft') prevCard();
+        });
+    </script>
+</body>
+</html>
