@@ -84,7 +84,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             <!-- Microbiology -->
-            <a href="microbiology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="review6.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-3xl mb-6">🧫</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Microbiology</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4">Viral replication, bacterial pathogenesis, and microbial metabolic diversity.</p>
@@ -108,7 +108,7 @@
             </a>
 
             <!-- Botany -->
-            <a href="botany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="review5.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center text-3xl mb-6">🌸</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Botany</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4">Plant morphology, reproductive strategies, and taxonomic classification.</p>
@@ -116,7 +116,7 @@
             </a>
 
             <!-- Plant Physiology -->
-            <a href="physiology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="review4.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center text-3xl mb-6">🌿</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Plant Physiology</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4">Photosynthetic Z-scheme, nutrient transport, and water potential dynamics.</p>
@@ -132,7 +132,7 @@
             </a>
 
  <!-- Genetics -->
-            <a href="botany.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="Review1.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-emerald-50 rounded-xl flex items-center justify-center text-3xl mb-6">🌸</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">genetics</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4">The scientific study of heredity, examining how genes—segments of DNA—pass traits from parents to offspring, influencing characteristics like physical appearance, health, and behavior.</p>
@@ -140,7 +140,7 @@
             </a>
 
   <!-- Anatomy and Physiology -->
-            <a href="zoology.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="review3.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center text-3xl mb-6">🦁</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Anatomy and Physiology</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4"> the study of the structure and physical relationships of body parts, while physiology is the study of how those parts function to maintain life.</p>
@@ -166,7 +166,7 @@
 
 
  <!-- Ecology -->
-            <a href="evolution.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+            <a href="review2.html" class="study-card bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
                 <div class="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center text-3xl mb-6">🦴</div>
                 <h3 class="text-xl font-bold text-slate-900 mb-2">Ecology</h3>
                 <p class="text-slate-600 text-sm leading-relaxed mb-4">The scientific study of how living organisms (biotic) interact with each other and their non-living (abiotic) physical environment..</p>
