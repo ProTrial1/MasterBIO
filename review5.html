@@ -1,0 +1,617 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  Leaf, 
+  BookOpen, 
+  Search, 
+  Menu, 
+  X, 
+  Microscope, 
+  Sprout, 
+  Dna, 
+  TreePine,
+  CheckCircle2,
+  Info,
+  ChevronRight,
+  Zap,
+  Waves,
+  Globe,
+  Activity,
+  Maximize2,
+  BookMarked,
+  Layers,
+  Sparkles,
+  Send,
+  Loader2,
+  MessageSquare,
+  RefreshCw
+} from 'lucide-react';
+
+// --- GEMINI API INTEGRATION UTILS ---
+const apiKey = ""; 
+
+const callGemini = async (prompt, systemPrompt = "You are an expert botanist and academic tutor.") => {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    systemInstruction: { parts: [{ text: systemPrompt }] }
+  };
+
+  const fetchWithRetry = async (retries = 5, delay = 1000) => {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(retries - 1, delay * 2);
+      }
+      throw error;
+    }
+  };
+
+  const result = await fetchWithRetry();
+  return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+};
+
+// --- DATA ---
+const STUDY_DATA = [
+  {
+    id: 'intro',
+    title: '1. Fundamentals of Botany',
+    icon: <Leaf className="w-5 h-5" />,
+    summary: "The foundational principles of plant biology, from hierarchical organization to the history of botanical science.",
+    content: `Botany, or Plant Biology, is the rigorous scientific study of organisms in the kingdom Plantae. Beyond simple classification, modern botany integrates molecular genetics, biochemistry, and ecology to understand how plants sustain life on Earth.`,
+    topics: [
+      { name: 'Hierarchical Organization', details: 'Plants are organized from atoms $\rightarrow$ molecules $\rightarrow$ organelles $\rightarrow$ cells $\rightarrow$ tissues $\rightarrow$ organs $\rightarrow$ organism.' },
+      { name: 'Primary Metabolism', details: 'The unique ability to utilize $CO_2$, $H_2O$, and photons to synthesize glucose ($C_6H_{12}O_6$).' },
+      { name: 'Botanical Disciplines', details: 'Systematics, Paleobotany, Ethnobotany, and Phytopathology.' }
+    ],
+    deepDive: {
+      title: "The Importance of Plants",
+      text: "Plants are responsible for the 'Great Oxidation Event' approximately 2.4 billion years ago, which paved the way for aerobic life. Today, they sequester gigatons of carbon annually, acting as the primary buffer against climate change."
+    }
+  },
+  {
+    id: 'cytology',
+    title: '2. Plant Cytology & Cell Cycle',
+    icon: <Microscope className="w-5 h-5" />,
+    summary: "A detailed look at the eukaryotic plant cell, unique organelles, and the mechanics of plant-specific cell division.",
+    content: `Plant cells are characterized by a rigid cell wall and a massive central vacuole. Unlike animal cells, plant cells must manage high turgor pressure and communicate through literal holes in their walls called plasmodesmata.`,
+    subsections: [
+      {
+        title: 'Organelle Specialization',
+        details: 'Specific structures for energy and storage.',
+        list: [
+          'Chloroplasts: Contain chlorophyll and thylakoids for light harvesting.',
+          'Amyloplasts: Non-pigmented plastids that store starch granules.',
+          'Large Central Vacuole: Maintains turgor pressure ($\psi_p$) and stores waste.',
+          'Plasmodesmata: Channels for symplastic transport between cells.'
+        ]
+      },
+      {
+        title: 'The Plant Cell Cycle',
+        details: 'Plants undergo mitosis similarly to animals but with two key differences: the Preprophase Band (PPB) and the Phragmoplast.',
+        list: [
+          'Preprophase Band: Predicts the future plane of cell division.',
+          'Phragmoplast: A scaffold for cell plate formation during cytokinesis.',
+          'Cell Plate: Becomes the new middle lamella and primary cell walls.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'histology',
+    title: '3. Histology & Secondary Growth',
+    icon: <Layers className="w-5 h-5" />,
+    summary: "Exploration of tissue systems and the complex process of wood formation (Secondary Growth).",
+    content: `Plant tissues are categorized into Meristematic (undifferentiated) and Permanent (differentiated) tissues. Secondary growth is what allows trees to grow in diameter, a process driven by lateral meristems.`,
+    topics: [
+      { name: 'Meristematic Zones', details: 'Apical meristems (Primary growth) vs. Lateral meristems (Secondary growth).' },
+      { name: 'Tissue Systems', details: 'Dermal (protection), Ground (bulk/metabolism), and Vascular (transport).' },
+      { name: 'Xylem vs. Phloem', details: 'Xylem moves water via negative pressure (transpiration pull); Phloem moves sap via positive pressure (source-to-sink).' }
+    ],
+    deepDive: {
+      title: "Secondary Growth & Wood",
+      text: "The Vascular Cambium produces secondary xylem (wood) to the inside and secondary phloem to the outside. The Cork Cambium produces the periderm (bark), replacing the epidermis as the plant ages."
+    }
+  },
+  {
+    id: 'morphology',
+    title: '4. Vegetative Morphology',
+    icon: <Sprout className="w-5 h-5" />,
+    summary: "The external architecture of roots, stems, and leaves, including specialized adaptations.",
+    content: `Morphology is the study of form. Plants exhibit plastic development, meaning their form can change significantly based on environmental stressors like light availability and soil moisture.`,
+    subsections: [
+      {
+        title: 'Leaf Architecture & Phyllotaxy',
+        details: 'The arrangement of leaves on a stem is mathematically optimized for light interception.',
+        list: [
+          'Alternate: One leaf per node.',
+          'Opposite: Two leaves per node.',
+          'Whorled: Three or more leaves per node.',
+          'Venation: Parallel (Monocots) vs. Reticulate (Eudicots).'
+        ]
+      },
+      {
+        title: 'Modified Organs',
+        details: 'Organs evolved for functions beyond the standard vegetative roles.',
+        list: [
+          'Rhizomes & Tubers: Underground storage and asexual reproduction.',
+          'Tendrils: Modified leaves or stems for climbing support.',
+          'Pneumatophores: Specialized roots for gas exchange in swampy soils.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'physiology',
+    title: '5. Advanced Physiology & Metabolism',
+    icon: <Waves className="w-5 h-5" />,
+    summary: "The biochemistry of photosynthesis, water potential, and the hormonal regulation of growth.",
+    content: `Physiology integrates physics and chemistry to explain plant life. Central to this is Water Potential ($\psi$), the governing force behind water movement from soil to atmosphere.`,
+    subsections: [
+      {
+        title: 'Photosynthesis Deep Dive',
+        details: 'Conversion of light energy into chemical energy occurs in two stages.',
+        list: [
+          'Light Reactions: Occur in Thylakoids; produce ATP and NADPH.',
+          'Calvin Cycle: Occurs in the Stroma; fixes $CO_2$ using RuBisCO.',
+          'C4 & CAM: Evolutionary adaptations to minimize photorespiration in hot/dry climates.'
+        ]
+      },
+      {
+        title: 'Phytohormones',
+        details: 'Chemical signals that regulate every aspect of the plant life cycle.',
+        list: [
+          'Auxins: Control cell elongation and apical dominance.',
+          'Cytokinins: Promote cell division and delay leaf senescence.',
+          'Abscisic Acid (ABA): The "stress hormone"; closes stomata during drought.',
+          'Ethylene: A gaseous hormone promoting fruit ripening.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'reproduction',
+    title: '6. Reproductive Biology',
+    icon: <Zap className="w-5 h-5" />,
+    summary: "Sexual and asexual reproduction, floral evolution, and the unique phenomenon of Double Fertilization.",
+    content: `Plants exhibit an 'Alternation of Generations' between a diploid sporophyte and a haploid gametophyte. In flowering plants, this process has become highly specialized and efficient.`,
+    topics: [
+      { name: 'The Flower', details: 'A modified shoot with four whorls: Sepals, Petals, Stamens, and Carpels.' },
+      { name: 'Double Fertilization', details: 'One sperm fuses with the egg (zygote); the other fuses with two polar nuclei to form the 3n endosperm.' },
+      { name: 'Seed Dispersal', details: 'Anemochory (wind), Hydrochory (water), and Zoochory (animals).' }
+    ]
+  },
+  {
+    id: 'taxonomy',
+    title: '7. Taxonomy & Phylogeny',
+    icon: <TreePine className="w-5 h-5" />,
+    summary: "Modern classification systems and the evolutionary history from Green Algae to Angiosperms.",
+    content: `Plant taxonomy has shifted from purely morphological descriptions to molecular phylogenetics. The APG (Angiosperm Phylogeny Group) system is the current standard for classifying flowering plants.`,
+    topics: [
+      { name: 'Cladistics', details: 'Using shared derived characters (synapomorphies) to build evolutionary trees.' },
+      { name: 'Major Clades', details: 'Bryophytes (Non-vascular), Lycophytes (Seedless vascular), Gymnosperms (Naked seeds), Angiosperms (Flowering).' },
+      { name: 'Monocots vs. Eudicots', details: 'Distinguished by cotyledon number, leaf venation, and vascular bundle arrangement.' }
+    ]
+  },
+  {
+    id: 'ecology',
+    title: '8. Plant Ecology & Ethnobotany',
+    icon: <Globe className="w-5 h-5" />,
+    summary: "Plants in ecosystems, community interactions, and the historical human use of flora.",
+    content: `Plants do not exist in isolation. They form complex symbioses with fungi (Mycorrhizae) and bacteria (Nitrogen-fixation) to survive in diverse environments.`,
+    topics: [
+      { name: 'Mycorrhizae', details: 'Mutualistic association between roots and fungi that increases nutrient absorption area.' },
+      { name: 'Plant-Herbivore Defense', details: 'Mechanical (thorns) and chemical (alkaloids, tannins) defenses.' },
+      { name: 'Ethnobotanical Applications', details: '90% of current medicine is derived from or inspired by plant secondary metabolites.' }
+    ]
+  }
+];
+
+const App = () => {
+  const [activeSectionId, setActiveSectionId] = useState(STUDY_DATA[0].id);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isReadingMode, setIsReadingMode] = useState(false);
+
+  // AI Assistant States
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiHistory, setAiHistory] = useState([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+
+  // Section AI Insight States
+  const [sectionInsights, setSectionInsights] = useState({}); // {sectionId: insightText}
+  const [isInsightLoading, setIsInsightLoading] = useState(false);
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return STUDY_DATA;
+    const lowerSearch = searchTerm.toLowerCase();
+    return STUDY_DATA.filter(s => 
+      s.title.toLowerCase().includes(lowerSearch) || 
+      s.summary.toLowerCase().includes(lowerSearch) ||
+      s.content.toLowerCase().includes(lowerSearch) ||
+      s.topics?.some(t => t.name.toLowerCase().includes(lowerSearch))
+    );
+  }, [searchTerm]);
+
+  const activeSection = useMemo(() => 
+    STUDY_DATA.find(s => s.id === activeSectionId) || STUDY_DATA[0]
+  , [activeSectionId]);
+
+  const handleAiAsk = async (e) => {
+    e.preventDefault();
+    if (!aiQuery.trim()) return;
+
+    const userMsg = { role: 'user', text: aiQuery };
+    setAiHistory(prev => [...prev, userMsg]);
+    setAiQuery('');
+    setIsAiLoading(true);
+    setAiError(null);
+
+    try {
+      const response = await callGemini(aiQuery);
+      setAiHistory(prev => [...prev, { role: 'ai', text: response }]);
+    } catch (err) {
+      setAiError("Failed to reach the AI Botanist. Please check your connection.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const getSectionInsight = async () => {
+    setIsInsightLoading(true);
+    try {
+      const prompt = `Based on the following summary of a botany chapter: "${activeSection.title}: ${activeSection.summary}", provide 3 fascinating, highly technical, and lesser-known facts that would interest an advanced botany student. Keep the tone academic but engaging. Format as a clean bulleted list.`;
+      const response = await callGemini(prompt);
+      setSectionInsights(prev => ({ ...prev, [activeSection.id]: response }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsInsightLoading(false);
+    }
+  };
+
+  return (
+    <div className={`min-h-screen font-sans text-slate-900 flex flex-col md:flex-row transition-colors duration-300 ${isReadingMode ? 'bg-orange-50/30' : 'bg-slate-50'}`}>
+      
+      {/* Mobile Header */}
+      <div className="md:hidden bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-[60]">
+        <div className="flex items-center gap-2">
+          <Leaf className="fill-emerald-400 text-emerald-400 w-5 h-5" />
+          <h1 className="font-bold text-lg tracking-tight">Botany Master</h1>
+        </div>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-white/10 rounded-lg">
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </div>
+
+      {/* Sidebar Navigation */}
+      <aside className={`
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 transition-transform duration-300
+        fixed md:static inset-0 z-50 bg-white border-r border-slate-200 
+        w-80 flex flex-col shadow-2xl md:shadow-none
+      `}>
+        <div className="p-6 hidden md:flex items-center gap-3 border-b border-slate-100 bg-white">
+          <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-200">
+            <Leaf className="text-white w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="font-black text-lg text-emerald-950 leading-none">Botany Master</h1>
+            <p className="text-[10px] text-emerald-600 font-bold tracking-widest mt-1">COMPETENCY GUIDE</p>
+          </div>
+        </div>
+
+        <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-emerald-600 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Quick find..." 
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <nav className="flex-1 p-4 overflow-y-auto space-y-1 scrollbar-hide">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Syllabus Chapters</p>
+            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">8 Modules</span>
+          </div>
+          
+          {filteredData.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => {setActiveSectionId(section.id); setSidebarOpen(false);}}
+              className={`w-full group flex flex-col gap-1 px-4 py-3 rounded-xl transition-all duration-200 text-left relative overflow-hidden ${
+                activeSectionId === section.id 
+                  ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-100 ring-4 ring-emerald-600/5' 
+                  : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={activeSectionId === section.id ? 'text-white' : 'text-emerald-500'}>
+                  {section.icon}
+                </span>
+                <span className="font-bold text-sm truncate">{section.title.split('. ')[1]}</span>
+              </div>
+              <p className={`text-[10px] line-clamp-1 ml-8 ${activeSectionId === section.id ? 'text-emerald-100' : 'text-slate-400'}`}>
+                {section.summary}
+              </p>
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-slate-100 space-y-2">
+          <button 
+            onClick={() => setIsReadingMode(!isReadingMode)}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+              isReadingMode ? 'bg-orange-100 border-orange-200 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-600'
+            }`}
+          >
+            <BookMarked size={14} />
+            {isReadingMode ? 'Reading Mode On' : 'Standard View'}
+          </button>
+          
+          <button 
+            onClick={() => setShowAiAssistant(!showAiAssistant)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-lg hover:shadow-emerald-200/50 transition-all active:scale-95"
+          >
+            <Sparkles size={14} />
+            ✨ Ask AI Botanist
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto h-screen relative scroll-smooth flex flex-col">
+        <div className={`flex-1 max-w-5xl mx-auto p-6 md:p-12 lg:p-16 transition-opacity duration-500 ${sidebarOpen ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+          
+          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            
+            {/* Header Section */}
+            <header className="space-y-4">
+              <div className="flex items-center gap-3 text-emerald-600 font-black text-sm tracking-widest uppercase">
+                <div className="h-px flex-1 bg-emerald-100"></div>
+                Module {activeSection.title.split('. ')[0]}
+                <div className="h-px flex-1 bg-emerald-100"></div>
+              </div>
+              <h1 className={`text-4xl md:text-6xl font-black tracking-tight leading-none ${isReadingMode ? 'text-slate-800' : 'text-slate-900'}`}>
+                {activeSection.title.split('. ')[1]}
+              </h1>
+              <p className="text-lg md:text-xl text-slate-500 font-medium max-w-2xl leading-relaxed">
+                {activeSection.summary}
+              </p>
+            </header>
+
+            {/* Core Content Block */}
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              
+              <div className="lg:col-span-8 space-y-10">
+                <div className={`rounded-[2.5rem] p-8 md:p-12 shadow-sm border relative overflow-hidden group ${isReadingMode ? 'bg-white border-orange-100' : 'bg-white border-slate-100'}`}>
+                  <div className="absolute -top-10 -right-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700">
+                    {React.cloneElement(activeSection.icon, { size: 300 })}
+                  </div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                      <BookOpen className="text-emerald-500" size={24} />
+                      Scientific Overview
+                    </h3>
+                    <button 
+                      onClick={getSectionInsight}
+                      disabled={isInsightLoading}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                    >
+                      {isInsightLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      ✨ AI Deep Dive
+                    </button>
+                  </div>
+
+                  {sectionInsights[activeSection.id] && (
+                    <div className="mb-8 p-6 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl text-white shadow-xl animate-in zoom-in-95">
+                      <h4 className="font-black text-sm uppercase tracking-[0.2em] mb-4 text-emerald-200">AI Enhanced Insights</h4>
+                      <div className="text-sm font-medium leading-relaxed whitespace-pre-wrap opacity-90">
+                        {sectionInsights[activeSection.id]}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={`prose prose-slate max-w-none ${isReadingMode ? 'text-lg leading-loose font-serif text-slate-700' : 'text-slate-600 leading-relaxed'}`}>
+                    {activeSection.content}
+                  </div>
+                </div>
+
+                {/* Topics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {activeSection.topics && activeSection.topics.map((topic, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-3xl border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all group">
+                      <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                         <Activity className="w-5 h-5 text-emerald-600 group-hover:text-white" />
+                      </div>
+                      <h4 className="font-black text-slate-800 text-lg mb-3 tracking-tight">{topic.name}</h4>
+                      <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                        {topic.details}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Special Detail Sections */}
+                {activeSection.subsections && activeSection.subsections.map((sub, idx) => (
+                  <div key={idx} className="bg-slate-900 rounded-[3rem] p-10 md:p-14 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-sky-400 to-emerald-400"></div>
+                    <div className="relative z-10 space-y-8">
+                      <div>
+                        <h4 className="text-3xl font-black mb-4 text-white tracking-tight">{sub.title}</h4>
+                        <p className="text-slate-400 font-medium max-w-2xl leading-relaxed">{sub.details}</p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {sub.list.map((item, i) => {
+                          const [label, ...desc] = item.split(':');
+                          return (
+                            <div key={i} className="group/item p-6 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+                              <p className="text-emerald-400 font-black text-sm uppercase tracking-wider mb-2">{label}</p>
+                              {desc.length > 0 && (
+                                <p className="text-slate-300 text-xs leading-relaxed font-medium">{desc.join(':')}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Sidebar / Quick Reference */}
+              <div className="lg:col-span-4 space-y-8">
+                {activeSection.deepDive && (
+                  <div className="bg-emerald-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden">
+                    <Zap className="absolute top-4 right-4 text-emerald-400/30" size={48} />
+                    <h4 className="text-xl font-black mb-4 flex items-center gap-2">Deep Dive</h4>
+                    <p className="text-sm text-emerald-50 leading-loose font-medium italic">
+                      "{activeSection.deepDive.text}"
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm sticky top-8">
+                  <h4 className="text-slate-900 font-black text-lg mb-6 flex items-center gap-3">
+                    <Info className="text-emerald-500" size={20} />
+                    Key Vocabulary
+                  </h4>
+                  <ul className="space-y-5">
+                    {[
+                      { word: 'Turgor', def: 'Internal water pressure in cells.' },
+                      { word: 'RuBisCO', def: 'Key enzyme in $CO_2$ fixation.' },
+                      { word: 'Xylem', def: 'Unidirectional water transport.' },
+                      { word: 'Phloem', def: 'Bidirectional sugar transport.' }
+                    ].map((item, i) => (
+                      <li key={i} className="group">
+                        <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1 group-hover:translate-x-1 transition-transform">{item.word}</p>
+                        <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.def}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <div className="mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Module Completion</p>
+                    <div className="flex gap-2 mb-2">
+                      {[1,2,3,4,5,6,7,8].map(n => (
+                        <div 
+                          key={n} 
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-1000 ${
+                            n <= parseInt(activeSection.title) ? 'bg-emerald-500' : 'bg-slate-200'
+                          }`}
+                        ></div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-500 text-right">Progress: {Math.round((parseInt(activeSection.title)/8)*100)}%</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* AI Assistant Drawer */}
+        {showAiAssistant && (
+          <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl z-[100] border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="p-6 border-b border-slate-100 bg-emerald-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Sparkles size={20} className="text-emerald-400" />
+                <h2 className="font-black text-sm uppercase tracking-widest">AI Botanist</h2>
+              </div>
+              <button onClick={() => setShowAiAssistant(false)} className="hover:bg-white/10 p-1 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+              {aiHistory.length === 0 && (
+                <div className="text-center py-10 space-y-4">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
+                    <MessageSquare className="text-emerald-600" />
+                  </div>
+                  <h3 className="font-bold text-slate-800">Ask a Question</h3>
+                  <p className="text-xs text-slate-500 max-w-[200px] mx-auto">Ask anything about xylem transport, photosynthetic pathways, or taxonomy!</p>
+                </div>
+              )}
+              {aiHistory.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-emerald-600 text-white rounded-br-none' 
+                      : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none'
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {isAiLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 animate-pulse flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-emerald-600" />
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Consulting Lab...</span>
+                  </div>
+                </div>
+              )}
+              {aiError && (
+                <div className="p-4 bg-red-50 border border-red-100 text-red-700 text-xs font-bold rounded-xl text-center">
+                  {aiError}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleAiAsk} className="p-4 border-t border-slate-200 bg-white">
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={aiQuery}
+                  onChange={(e) => setAiQuery(e.target.value)}
+                  placeholder="Ask the AI Botanist..."
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                />
+                <button 
+                  type="submit" 
+                  disabled={isAiLoading || !aiQuery.trim()}
+                  className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="mt-auto p-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-60">
+          <div className="flex items-center gap-2">
+            <Leaf size={16} />
+            <span className="text-xs font-bold tracking-widest">BOTANY MASTERY GUIDE © 2024</span>
+          </div>
+        </footer>
+      </main>
+
+      {/* Reading Mode Overlay Hint */}
+      {isReadingMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-900 text-white px-4 py-2 rounded-full text-[10px] font-black tracking-widest shadow-2xl z-50 animate-bounce">
+          EYE-CARE READING MODE ACTIVE
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;

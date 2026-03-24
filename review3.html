@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Anatomy & Physiology Study Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals & Soft Slate (Calm, Educational focus) -->
+    <!-- Application Structure Plan: 
+         A dual-pane dashboard layout. The left pane acts as a persistent navigation menu allowing quick switching between major organ systems. 
+         The main right pane dynamically updates to show three distinct tabs of information for the selected system: 
+         1. Anatomy (Structural components presented as an infographic card grid).
+         2. Physiology (Functional processes presented as an interactive step-by-step CSS timeline).
+         3. Quantitative Data (Metrics visualized via Chart.js).
+         This structure chunks complex A&P information into digestible, task-oriented views, preventing cognitive overload and encouraging active exploration. 
+    -->
+    <!-- Visualization & Content Choices: 
+         - Anatomy Parts -> Goal: Inform/Organize -> Viz: CSS Grid of styled cards with Unicode icons -> Justification: Clearly delineates parts without relying on complex external SVGs, keeping the app lightweight and fulfilling the NO SVG constraint.
+         - Physiological Processes -> Goal: Explain change over time/sequence -> Viz: Interactive HTML/CSS Stepper -> Justification: Breaks down complex processes into digestible steps, forcing user interaction to proceed, enhancing retention.
+         - System Metrics -> Goal: Compare/Inform -> Viz: Chart.js (Doughnut/Bar) -> Justification: Provides a quantitative perspective on biological functions, constrained within the required chart container styling for responsiveness.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        /* Custom styles for specific requirements */
+        body {
+            background-color: #faf8f5; /* Warm neutral background */
+            color: #334155; /* Slate 700 for text readability */
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* STRICT Chart Container Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Prevent excessive width on large screens */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Base height */
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px; /* Adjust for mobile */
+            }
+        }
+
+        /* Process Timeline Styles (HTML/CSS Diagram) */
+        .process-step {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .process-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+            border: 2px solid #94a3b8;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+        .process-step::after {
+            content: '';
+            position: absolute;
+            left: 0.45rem;
+            top: 1.25rem;
+            bottom: -1.5rem;
+            width: 2px;
+            background-color: #e2e8f0;
+            z-index: 5;
+        }
+        .process-step:last-child::after {
+            display: none;
+        }
+        .process-step.active::before {
+            background-color: #0ea5e9;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+        }
+        .process-step:hover::before {
+            border-color: #0ea5e9;
+        }
+        .step-content {
+            display: none;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            color: #475569;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .process-step.active .step-content {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tab Active State */
+        .tab-btn.active {
+            border-bottom-width: 2px;
+            border-color: #0ea5e9;
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden font-sans">
+
+    <!-- Mobile Header & Toggle -->
+    <div class="md:hidden bg-white shadow-sm p-4 flex justify-between items-center z-20">
+        <h1 class="text-xl font-bold text-slate-800">A&P Explorer</h1>
+        <button id="mobile-menu-btn" class="text-slate-500 hover:text-slate-800 focus:outline-none">
+            &#9776; <!-- Hamburger Icon -->
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="w-full md:w-72 bg-[#e8e4db] flex-shrink-0 flex flex-col absolute md:relative z-10 h-[calc(100vh-60px)] md:h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-lg md:shadow-none">
+        <div class="p-6 hidden md:block border-b border-[#d6d0c4]">
+            <h1 class="text-2xl font-bold text-slate-800 tracking-tight">A&P Explorer</h1>
+            <p class="text-sm text-slate-600 mt-1">Interactive Study Guide</p>
+        </div>
+        
+        <div class="p-4">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Organ Systems</h2>
+            <ul class="space-y-1 custom-scrollbar overflow-y-auto h-[60vh] md:h-auto" id="system-list">
+                <!-- System items injected by JS -->
+            </ul>
+        </div>
+        
+        <div class="mt-auto p-4 border-t border-[#d6d0c4]">
+            <p class="text-xs text-slate-500 text-center">Select a system to explore its anatomy, physiology, and data.</p>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 bg-[#faf8f5] flex flex-col h-full overflow-hidden relative">
+        
+        <!-- Welcome Screen (Shown initially) -->
+        <div id="welcome-screen" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#faf8f5] p-8 text-center transition-opacity duration-300">
+            <div class="text-6xl mb-6">&#129436;</div> <!-- Microscope/Science Emoji -->
+            <h2 class="text-3xl font-bold text-slate-800 mb-4">Welcome to Human Anatomy & Physiology</h2>
+            <p class="text-slate-600 max-w-lg mx-auto mb-8">
+                Explore the intricate systems that make up the human body. Understand structure (Anatomy) and function (Physiology) through interactive diagrams and data visualizations.
+            </p>
+            <p class="text-sm text-sky-600 font-medium animate-pulse">
+                &larr; Select a system from the menu to begin.
+            </p>
+        </div>
+
+        <!-- System Detail View (Hidden initially) -->
+        <div id="system-view" class="hidden flex-col h-full opacity-0 transition-opacity duration-500">
+            
+            <!-- Header section of content -->
+            <header class="bg-white px-8 py-6 shadow-sm z-0">
+                <div class="flex items-center gap-4 mb-2">
+                    <span id="system-icon" class="text-4xl p-3 bg-slate-100 rounded-xl shadow-inner"></span>
+                    <div>
+                        <h2 id="system-title" class="text-3xl font-bold text-slate-800"></h2>
+                        <p id="system-subtitle" class="text-slate-500 font-medium"></p>
+                    </div>
+                </div>
+                <p id="system-description" class="text-slate-600 mt-4 max-w-3xl leading-relaxed"></p>
+            </header>
+
+            <!-- Tabs Navigation -->
+            <div class="px-8 bg-white border-b border-slate-200">
+                <nav class="flex space-x-8" aria-label="Tabs">
+                    <button class="tab-btn active py-4 px-1 border-b-2 border-transparent hover:text-slate-700 font-medium text-sm text-slate-500 transition-colors" data-target="tab-anatomy">
+                        Structural Anatomy
+                    </button>
+                    <button class="tab-btn py-4 px-1 border-b-2 border-transparent hover:text-slate-700 font-medium text-sm text-slate-500 transition-colors" data-target="tab-physiology">
+                        Physiological Process
+                    </button>
+                    <button class="tab-btn py-4 px-1 border-b-2 border-transparent hover:text-slate-700 font-medium text-sm text-slate-500 transition-colors" data-target="tab-data">
+                        Quantitative Metrics
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Scrollable Tab Content Area -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                
+                <!-- Tab: Anatomy (Infographics) -->
+                <section id="tab-anatomy" class="tab-pane active">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-slate-800 mb-2">Major Organs & Structures</h3>
+                        <p class="text-slate-600">This section breaks down the physical components of the system. Anatomy is the study of structure. Review the primary parts and their fundamental roles below.</p>
+                    </div>
+                    
+                    <!-- CSS Grid Infographic -->
+                    <div id="anatomy-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                        <!-- Anatomy cards injected here -->
+                    </div>
+                </section>
+
+                <!-- Tab: Physiology (Processes) -->
+                <section id="tab-physiology" class="tab-pane hidden">
+                     <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-slate-800 mb-2">Core Physiological Mechanism</h3>
+                        <p class="text-slate-600">Physiology is the study of function. Below is an interactive sequence detailing a critical process performed by this system. Click through the steps to understand the sequence of events.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-3xl mx-auto">
+                        <h4 id="process-title" class="text-lg font-bold text-sky-700 mb-6 border-b pb-2"></h4>
+                        <div id="process-timeline" class="pl-2">
+                            <!-- Process steps injected here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tab: Data (Charts) -->
+                <section id="tab-data" class="tab-pane hidden">
+                     <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-slate-800 mb-2">System Metrics & Data</h3>
+                        <p class="text-slate-600">Visualizing the capabilities and functional metrics of the system provides a deeper understanding of its capacity and role in maintaining homeostasis.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center">
+                        <h4 id="chart-title" class="text-lg font-bold text-slate-700 mb-2 text-center"></h4>
+                        <p id="chart-desc" class="text-sm text-slate-500 mb-6 text-center max-w-xl"></p>
+                        
+                        <!-- REQUIRED CHART CONTAINER -->
+                        <div class="chart-container">
+                            <canvas id="systemChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Data Model (Simulating Source Report Data) ---
+        const systemsData = {
+            cardiovascular: {
+                id: 'cardiovascular',
+                name: 'Cardiovascular System',
+                icon: '❤️',
+                subtitle: 'The Body\'s Transport Network',
+                description: 'The cardiovascular system circulates blood throughout the body, delivering vital oxygen and nutrients to cells while removing metabolic waste products like carbon dioxide. It is a closed-loop system powered by a muscular pump.',
+                anatomy: [
+                    { name: 'The Heart', icon: '🫀', desc: 'A four-chambered muscular pump consisting of two atria (receiving chambers) and two ventricles (pumping chambers). It generates the pressure required to move blood.' },
+                    { name: 'Arteries', icon: '🔴', desc: 'Thick, elastic blood vessels that carry oxygen-rich blood away from the heart to the body tissues (except for the pulmonary artery).' },
+                    { name: 'Veins', icon: '🔵', desc: 'Vessels with valves that carry oxygen-depleted blood back to the heart. Valves prevent backflow against gravity.' },
+                    { name: 'Capillaries', icon: '🕸️', desc: 'Microscopic, one-cell-thick vessels where the actual exchange of gases, nutrients, and waste occurs between blood and tissues.' }
+                ],
+                process: {
+                    title: 'The Cardiac Cycle',
+                    steps: [
+                        { name: '1. Atrial & Ventricular Diastole', detail: 'The heart muscle is completely relaxed. Blood flows passively from the major veins into the atria, and through open atrioventricular (AV) valves into the ventricles.' },
+                        { name: '2. Atrial Systole', detail: 'The atria contract, pushing the remaining 20-30% of blood into the ventricles, topping them off. Ventricles are full (End-Diastolic Volume).' },
+                        { name: '3. Isovolumetric Contraction', detail: 'Ventricles begin to contract. Pressure rises rapidly, slamming the AV valves shut (the "lub" sound). All valves are briefly closed.' },
+                        { name: '4. Ventricular Ejection', detail: 'Pressure in ventricles exceeds pressure in the aorta/pulmonary trunk. Semilunar valves open, and blood is forcefully ejected into the arteries.' },
+                        { name: '5. Ventricular Relaxation', detail: 'Ventricles relax. Pressure drops, causing blood in arteries to slightly flow back, slamming semilunar valves shut (the "dup" sound). Cycle restarts.' }
+                    ]
+                },
+                chart: {
+                    type: 'pie',
+                    title: 'Blood Volume Distribution at Rest',
+                    description: 'At any given moment while resting, the majority of the body\'s blood volume resides in the highly distensible systemic veins, acting as a blood reservoir.',
+                    labels: ['Systemic Veins', 'Systemic Arteries', 'Pulmonary Circuit', 'Heart', 'Capillaries'],
+                    data: [64, 15, 9, 7, 5],
+                    colors: ['#3b82f6', '#ef4444', '#a855f7', '#ec4899', '#f59e0b']
+                }
+            },
+            respiratory: {
+                id: 'respiratory',
+                name: 'Respiratory System',
+                icon: '🫁',
+                subtitle: 'Gas Exchange Mechanism',
+                description: 'The primary function of the respiratory system is to supply the blood with oxygen in order for the blood to deliver oxygen to all parts of the body. It achieves this through breathing, extracting oxygen from the air and expelling carbon dioxide.',
+                anatomy: [
+                    { name: 'Nasal Cavity & Pharynx', icon: '👃', desc: 'Warms, moistens, and filters incoming air. The pharynx serves as a shared passageway for both air and food.' },
+                    { name: 'Trachea (Windpipe)', icon: '🪈', desc: 'A rigid tube supported by C-shaped cartilage rings that keeps the airway open, leading down to the lungs.' },
+                    { name: 'Bronchi & Bronchioles', icon: '🌿', desc: 'The trachea splits into primary bronchi, which branch into smaller bronchioles within the lungs, directing air to the exchange surfaces.' },
+                    { name: 'Alveoli', icon: '🫧', desc: 'Millions of tiny, grape-like air sacs wrapped in capillaries. This is the sole site where gas exchange (diffusion) occurs.' }
+                ],
+                process: {
+                    title: 'Mechanism of Pulmonary Ventilation (Breathing)',
+                    steps: [
+                        { name: '1. Initiation', detail: 'The respiratory center in the brainstem sends nerve impulses to the diaphragm and external intercostal muscles.' },
+                        { name: '2. Inspiration (Inhalation)', detail: 'Diaphragm contracts (moves down), intercostals contract (ribs move up/out). Thoracic cavity volume increases. Lung pressure drops below atmospheric pressure. Air rushes in.' },
+                        { name: '3. Gas Exchange', detail: 'Air reaches alveoli. O2 diffuses across the respiratory membrane into blood capillaries; CO2 diffuses from blood into alveoli.' },
+                        { name: '4. Expiration (Exhalation)', detail: 'A passive process at rest. Muscles relax. Thoracic volume decreases. Lung pressure rises above atmospheric pressure. Air is pushed out.' }
+                    ]
+                },
+                chart: {
+                    type: 'bar',
+                    title: 'Average Lung Volumes (Adult Male)',
+                    description: 'Spirometry measures the volume of air an individual can inhale or exhale. Note the residual volume that always remains to keep alveoli open.',
+                    labels: ['Tidal Volume (Resting breath)', 'Inspiratory Reserve', 'Expiratory Reserve', 'Residual Volume'],
+                    data: [500, 3100, 1200, 1200], // in mL
+                    colors: ['#0ea5e9', '#38bdf8', '#7dd3fc', '#bae6fd'],
+                    yAxisLabel: 'Volume (mL)'
+                }
+            },
+            nervous: {
+                id: 'nervous',
+                name: 'Nervous System',
+                icon: '🧠',
+                subtitle: 'Control and Communication',
+                description: 'The master controlling and communicating system of the body. Every thought, action, and emotion reflects its activity. It uses electrical impulses to orchestrate near-instantaneous responses to internal and external changes.',
+                anatomy: [
+                    { name: 'Brain', icon: '🧠', desc: 'The central processing unit. Divided into cerebrum (conscious thought), cerebellum (coordination), and brainstem (autonomic functions).' },
+                    { name: 'Spinal Cord', icon: '🦴', desc: 'A bundle of nerve fibers running down the spine, acting as a superhighway for messages between the brain and the rest of the body, and coordinating reflexes.' },
+                    { name: 'Neurons', icon: '🧬', desc: 'Highly specialized cells that transmit electrical signals. Consist of dendrites (receivers), a cell body, and an axon (transmitter).' },
+                    { name: 'Peripheral Nerves', icon: '⚡', desc: 'Bundles of axons extending outside the central nervous system, serving as sensory inputs and motor outputs to limbs and organs.' }
+                ],
+                process: {
+                    title: 'Synaptic Transmission',
+                    steps: [
+                        { name: '1. Action Potential Arrival', detail: 'An electrical impulse (action potential) travels down the axon and reaches the axon terminal (synaptic knob).' },
+                        { name: '2. Calcium Influx', detail: 'The depolarization causes voltage-gated Calcium channels to open. Ca2+ ions rush into the terminal.' },
+                        { name: '3. Vesicle Exocytosis', detail: 'Calcium causes synaptic vesicles containing neurotransmitters to fuse with the presynaptic membrane and release their contents into the synaptic cleft.' },
+                        { name: '4. Receptor Binding', detail: 'Neurotransmitters diffuse across the gap and bind to specific receptors on the post-synaptic neuron or muscle cell.' },
+                        { name: '5. Signal Propagation / Termination', detail: 'Binding opens ion channels, creating a new electrical signal in the next cell. Neurotransmitters are then quickly broken down or reuptaken to end the signal.' }
+                    ]
+                },
+                chart: {
+                    type: 'bar', // Using bar to represent speed comparison effectively
+                    title: 'Nerve Impulse Conduction Velocities',
+                    description: 'The speed of an electrical signal depends heavily on the presence of myelin (an insulating sheath) and the diameter of the nerve fiber.',
+                    labels: ['Large Myelinated (Muscle Position)', 'Small Myelinated (Touch/Pain)', 'Unmyelinated (Dull Ache)'],
+                    data: [120, 15, 1], // meters per second approx
+                    colors: ['#f59e0b', '#fbbf24', '#fcd34d'],
+                    yAxisLabel: 'Speed (Meters/Second)'
+                }
+            },
+            digestive: {
+                id: 'digestive',
+                name: 'Digestive System',
+                icon: '🥗',
+                subtitle: 'Nutrient Extraction Plant',
+                description: 'A continuous tube running from mouth to anus, with accessory organs. It breaks down complex food molecules into absorbable units that enter the blood for distribution to body cells.',
+                anatomy: [
+                    { name: 'Stomach', icon: '🫘', desc: 'A muscular sac that churns food into a liquid paste called chyme, mixing it with potent gastric acid and protein-digesting enzymes.' },
+                    { name: 'Small Intestine', icon: '🍝', desc: 'A long, highly coiled tube where the vast majority of chemical digestion and nutrient absorption occurs through microscopic villi.' },
+                    { name: 'Large Intestine', icon: '🍩', desc: 'Absorbs remaining water and electrolytes, houses beneficial gut bacteria, and compacts indigestible material into feces.' },
+                    { name: 'Liver & Pancreas', icon: '🥩', desc: 'Accessory organs. The liver produces bile to emulsify fats. The pancreas secretes digestive enzymes and bicarbonate into the small intestine.' }
+                ],
+                process: {
+                    title: 'The Phases of Gastric Secretion',
+                    steps: [
+                        { name: '1. Cephalic Phase (Brain)', detail: 'Triggered by the sight, smell, or thought of food. The vagus nerve stimulates the stomach to start producing gastric juice before food even enters.' },
+                        { name: '2. Gastric Phase (Stomach)', detail: 'Triggered when food actually enters and distends the stomach. Stretch receptors and the presence of proteins stimulate massive release of gastrin, acid, and enzymes.' },
+                        { name: '3. Intestinal Phase (Intestine)', detail: 'As acidic chyme begins to empty into the small intestine, it triggers a reflex. Initially stimulatory, but quickly becomes inhibitory, sending signals to slow down stomach emptying so the intestine isn\'t overwhelmed.' }
+                    ]
+                },
+                chart: {
+                    type: 'doughnut',
+                    title: 'Approximate Transit Times',
+                    description: 'The average time food spends in different segments of the GI tract. Notice that the bulk of time is spent processing waste in the large intestine.',
+                    labels: ['Stomach (Churning)', 'Small Intestine (Absorption)', 'Large Intestine (Processing)'],
+                    data: [4, 5, 36], // hours approx
+                    colors: ['#ef4444', '#f59e0b', '#84cc16']
+                }
+            },
+            skeletal: {
+                id: 'skeletal',
+                name: 'Skeletal System',
+                icon: '🦴',
+                subtitle: 'The Body\'s Structural Framework',
+                description: 'The skeletal system provides structural support, protects internal organs, allows for movement (in conjunction with muscles), stores vital minerals like calcium, and produces blood cells in the marrow.',
+                anatomy: [
+                    { name: 'Bones', icon: '🦴', desc: 'Rigid organs that form the human skeleton. There are 206 bones in the adult human body, categorized by shape (long, short, flat, irregular).' },
+                    { name: 'Cartilage', icon: '👂', desc: 'A flexible, rubbery connective tissue that cushions joints and forms structures like the nose, ears, and the ribcage attachments.' },
+                    { name: 'Ligaments', icon: '🎗️', desc: 'Tough bands of fibrous connective tissue that connect bone to bone, providing stability to joints during movement.' },
+                    { name: 'Joints', icon: '🦾', desc: 'The articulations where two or more bones meet. They range from freely movable (synovial joints like the knee) to completely immobile (skull sutures).' }
+                ],
+                process: {
+                    title: 'Bone Fracture Repair Process',
+                    steps: [
+                        { name: '1. Hematoma Formation', detail: 'Immediately after a break, blood vessels rupture, forming a large clot (hematoma) around the fracture site. Inflammation begins.' },
+                        { name: '2. Fibrocartilaginous Callus', detail: 'Over a few days, fibroblasts and osteoblasts migrate to the site. They create a soft callus of collagen and cartilage to bridge the broken bone ends.' },
+                        { name: '3. Bony Callus Formation', detail: 'Within weeks, osteoblasts begin replacing the soft cartilage callus with spongy bone, forming a hard, bony callus.' },
+                        { name: '4. Bone Remodeling', detail: 'Over months to years, osteoclasts break down excess bone, and osteoblasts lay down compact bone, restoring the bone to its original shape and strength.' }
+                    ]
+                },
+                chart: {
+                    type: 'doughnut',
+                    title: 'Bones by Shape Category',
+                    description: 'The 206 bones of the adult skeleton are classified into four main shape categories, which dictate their function.',
+                    labels: ['Long Bones (Levers)', 'Short Bones (Support)', 'Flat Bones (Protection)', 'Irregular/Sesamoid'],
+                    data: [90, 30, 40, 46],
+                    colors: ['#cbd5e1', '#94a3b8', '#64748b', '#475569']
+                }
+            },
+            muscular: {
+                id: 'muscular',
+                name: 'Muscular System',
+                icon: '💪',
+                subtitle: 'The Engine of Movement',
+                description: 'The muscular system is responsible for the movement of the human body. Attached to the bones of the skeletal system are about 700 named muscles that make up roughly half of a person\'s body weight.',
+                anatomy: [
+                    { name: 'Skeletal Muscle', icon: '🏃', desc: 'Voluntary, striated muscle tissue attached to bones. Responsible for conscious movements, posture, and generating body heat.' },
+                    { name: 'Smooth Muscle', icon: '🌭', desc: 'Involuntary, non-striated muscle found in the walls of hollow organs (like the stomach, intestines, and blood vessels). Moves substances through the body.' },
+                    { name: 'Cardiac Muscle', icon: '❤️', desc: 'Involuntary, striated muscle found exclusively in the heart wall. Features intercalated discs that allow synchronized contractions.' },
+                    { name: 'Tendons', icon: '🔗', desc: 'Tough bands of dense regular connective tissue that securely attach skeletal muscles to bones.' }
+                ],
+                process: {
+                    title: 'Sliding Filament Theory (Muscle Contraction)',
+                    steps: [
+                        { name: '1. Action Potential Arrival', detail: 'A nerve impulse reaches the neuromuscular junction, releasing acetylcholine, which triggers an action potential on the muscle cell membrane.' },
+                        { name: '2. Calcium Release', detail: 'The action potential travels deep into the muscle fiber, causing the sarcoplasmic reticulum to release stored calcium ions (Ca2+).' },
+                        { name: '3. Cross-Bridge Formation', detail: 'Calcium binds to troponin, moving tropomyosin out of the way. This exposes binding sites on actin filaments. Myosin heads bind to these sites.' },
+                        { name: '4. The Power Stroke', detail: 'Using ATP (energy), the myosin heads pivot, pulling the actin filaments toward the center of the sarcomere. The muscle shortens.' },
+                        { name: '5. Relaxation', detail: 'ATP binds to myosin, breaking the cross-bridge. Calcium is actively pumped back into storage, and the muscle relaxes.' }
+                    ]
+                },
+                chart: {
+                    type: 'bar',
+                    title: 'Skeletal Muscle Fiber Types',
+                    description: 'Average distribution of muscle fiber types in a typical human. Endurance athletes may have more Type I, while sprinters have more Type II.',
+                    labels: ['Type I (Slow Oxidative)', 'Type IIa (Fast Oxidative)', 'Type IIx (Fast Glycolytic)'],
+                    data: [45, 40, 15], 
+                    colors: ['#ef4444', '#f472b6', '#fbcfe8'],
+                    yAxisLabel: 'Average Percentage (%)'
+                }
+            },
+            integumentary: {
+                id: 'integumentary',
+                name: 'Integumentary System',
+                icon: '🤚',
+                subtitle: 'The Outer Shield',
+                description: 'Comprising the skin, hair, nails, and exocrine glands, this system provides a physical barrier to protect the body from damage, infection, and dehydration, while also regulating temperature.',
+                anatomy: [
+                    { name: 'Epidermis', icon: '🧱', desc: 'The outermost layer of skin. Made of closely packed epithelial cells. It provides a waterproof barrier and creates our skin tone.' },
+                    { name: 'Dermis', icon: '🧬', desc: 'The middle, thickest layer. Contains tough connective tissue, hair follicles, sweat glands, blood vessels, and sensory nerve endings.' },
+                    { name: 'Hypodermis', icon: '🧈', desc: 'Also called subcutaneous tissue. Made of fat and connective tissue, it insulates the body and attaches skin to underlying muscle/bone.' },
+                    { name: 'Appendages', icon: '💅', desc: 'Includes hair (insulation/protection), nails (tool/protection for digits), and glands (sweat for cooling, sebum for lubrication).' }
+                ],
+                process: {
+                    title: 'Deep Wound Healing Process',
+                    steps: [
+                        { name: '1. Hemostasis', detail: 'Blood vessels constrict to limit blood loss, and platelets aggregate to form a clot. A fibrin mesh secures the clot, stopping bleeding.' },
+                        { name: '2. Inflammation', detail: 'Blood vessels dilate, bringing white blood cells (macrophages) to the area to engulf bacteria, dead cells, and debris. The area becomes red, warm, and swollen.' },
+                        { name: '3. Proliferation', detail: 'Fibroblasts multiply and produce collagen to rebuild the tissue matrix. New blood vessels form (angiogenesis), and epithelial cells migrate across the wound surface.' },
+                        { name: '4. Maturation (Remodeling)', detail: 'Collagen fibers are reorganized and strengthened. The temporary tissue is replaced by a stronger, permanent scar tissue. This can take months to years.' }
+                    ]
+                },
+                chart: {
+                    type: 'pie',
+                    title: 'Cellular Composition of Epidermis',
+                    description: 'The vast majority of cells in the outer layer of skin are dedicated to building a tough protein barrier (keratin), while a small fraction handle pigment and immunity.',
+                    labels: ['Keratinocytes (Barrier)', 'Melanocytes (Pigment)', 'Langerhans Cells (Immune)', 'Merkel Cells (Touch)'],
+                    data: [90, 5, 4, 1],
+                    colors: ['#fdba74', '#9a3412', '#22c55e', '#3b82f6']
+                }
+            },
+            endocrine: {
+                id: 'endocrine',
+                name: 'Endocrine System',
+                icon: '🧪',
+                subtitle: 'Chemical Messengers',
+                description: 'A network of ductless glands that secrete hormones directly into the blood. These hormones regulate slow, long-term processes like growth, metabolism, sexual development, and tissue function.',
+                anatomy: [
+                    { name: 'Pituitary Gland', icon: '👑', desc: 'Known as the "master gland," it sits at the base of the brain and secretes hormones that control many other endocrine glands.' },
+                    { name: 'Thyroid Gland', icon: '🦋', desc: 'A butterfly-shaped gland in the neck. Its hormones heavily regulate the body\'s metabolic rate, heart function, and digestive function.' },
+                    { name: 'Adrenal Glands', icon: '⚡', desc: 'Located on top of the kidneys. They produce hormones that help regulate metabolism, immune system, blood pressure, and the fight-or-flight response.' },
+                    { name: 'Pancreas (Endocrine)', icon: '📉', desc: 'Contains the Islets of Langerhans, which secrete insulin and glucagon to precisely regulate blood glucose levels.' }
+                ],
+                process: {
+                    title: 'Blood Glucose Regulation (Negative Feedback)',
+                    steps: [
+                        { name: '1. Stimulus', detail: 'You eat a meal. Carbohydrates are digested into glucose, causing blood sugar levels to rise above the normal range.' },
+                        { name: '2. Sensor & Control Center', detail: 'Beta cells in the pancreas detect the high glucose levels and secrete the hormone insulin into the blood.' },
+                        { name: '3. Effector Action', detail: 'Insulin signals cells throughout the body (especially muscle and liver cells) to take in glucose from the blood and store it as glycogen.' },
+                        { name: '4. Return to Homeostasis', detail: 'As cells absorb glucose, blood sugar levels drop back to the normal range. The pancreas detects this drop and stops secreting insulin.' }
+                    ]
+                },
+                chart: {
+                    type: 'bar',
+                    title: 'Approximate Weight of Major Glands',
+                    description: 'Despite having massive systemic effects, endocrine glands are incredibly small. The pancreas is an outlier because it is primarily an exocrine (digestive) organ.',
+                    labels: ['Pancreas', 'Thyroid Gland', 'Adrenal Glands (Pair)', 'Pituitary Gland'],
+                    data: [90, 20, 10, 0.5], 
+                    colors: ['#a855f7', '#d946ef', '#ec4899', '#f43f5e'],
+                    yAxisLabel: 'Weight (Grams)'
+                }
+            },
+            lymphatic: {
+                id: 'lymphatic',
+                name: 'Lymphatic & Immune',
+                icon: '🛡️',
+                subtitle: 'Defense and Fluid Return',
+                description: 'A network of tissues, vessels, and organs that work together to move a colorless fluid called lymph back into the circulatory system. It is also the structural home of the immune system, defending against pathogens.',
+                anatomy: [
+                    { name: 'Lymph Nodes', icon: '🧫', desc: 'Small, bean-shaped structures that filter lymph fluid. They are packed with immune cells (lymphocytes) that destroy viruses and bacteria.' },
+                    { name: 'Spleen', icon: '🩸', desc: 'The largest lymphatic organ. It filters the blood (not lymph), recycling old red blood cells and housing white blood cells to mount immune responses.' },
+                    { name: 'Thymus', icon: '🎓', desc: 'A gland in the upper chest where T-lymphocytes (T-cells) mature and become specialized to recognize specific foreign antigens.' },
+                    { name: 'Lymphatic Vessels', icon: '🛤️', desc: 'A one-way system of microscopic capillaries and larger vessels that collect excess interstitial fluid from tissues and return it to the blood.' }
+                ],
+                process: {
+                    title: 'Phagocytosis (Cellular Eating)',
+                    steps: [
+                        { name: '1. Chemotaxis', detail: 'Chemical signals from damaged tissue or bacteria attract a phagocytic cell (like a macrophage or neutrophil) to the area of infection.' },
+                        { name: '2. Adherence', detail: 'The phagocyte attaches to the surface of the microbe. (This is enhanced if the microbe is coated in antibodies).' },
+                        { name: '3. Ingestion', detail: 'The phagocyte extends pseudopods (cellular arms) that surround and engulf the microbe, trapping it inside a vesicle called a phagosome.' },
+                        { name: '4. Digestion', detail: 'The phagosome merges with a lysosome (which contains digestive enzymes). The enzymes destroy the microbe.' },
+                        { name: '5. Exocytosis', detail: 'The residual waste material is expelled from the phagocyte, and pieces of the microbe may be presented to other immune cells to trigger a broader response.' }
+                    ]
+                },
+                chart: {
+                    type: 'doughnut',
+                    title: 'White Blood Cell Differential',
+                    description: 'The typical percentages of the five main types of leukocytes circulating in a healthy adult\'s bloodstream.',
+                    labels: ['Neutrophils (First Responders)', 'Lymphocytes (T & B Cells)', 'Monocytes (Macrophages)', 'Eosinophils (Parasites/Allergy)', 'Basophils (Histamine)'],
+                    data: [60, 30, 6, 3, 1],
+                    colors: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444']
+                }
+            },
+            urinary: {
+                id: 'urinary',
+                name: 'Urinary System',
+                icon: '💧',
+                subtitle: 'Filtration and Waste Removal',
+                description: 'The urinary system eliminates metabolic wastes from the body, regulates blood volume and blood pressure, controls levels of electrolytes and metabolites, and regulates blood pH.',
+                anatomy: [
+                    { name: 'Kidneys', icon: '🫘', desc: 'Two bean-shaped organs that act as complex filters. They clean the blood, balance fluids, and produce urine.' },
+                    { name: 'Ureters', icon: '🛝', desc: 'Narrow tubes of smooth muscle that propel urine from the kidneys down to the urinary bladder using peristalsis.' },
+                    { name: 'Urinary Bladder', icon: '🎈', desc: 'A hollow, muscular sac that serves as a temporary reservoir for urine before it is eliminated from the body.' },
+                    { name: 'Urethra', icon: '🚰', desc: 'The tube that conveys urine from the bladder to the outside of the body. Contains sphincter muscles that allow voluntary control over urination.' }
+                ],
+                process: {
+                    title: 'Urine Formation in the Nephron',
+                    steps: [
+                        { name: '1. Glomerular Filtration', detail: 'Blood enters the glomerulus (a knot of capillaries) under high pressure. Water, ions, amino acids, and wastes are forced out of the blood and into the Bowman\'s capsule.' },
+                        { name: '2. Tubular Reabsorption', detail: 'As the filtrate moves through the renal tubules, the body reclaims almost all the water, glucose, amino acids, and necessary ions back into the bloodstream.' },
+                        { name: '3. Tubular Secretion', detail: 'Additional wastes, excess H+ ions (for pH balance), and certain drugs are actively transported from the blood directly into the tubule to be excreted.' },
+                        { name: '4. Water Conservation', detail: 'In the collecting duct, under the influence of Antidiuretic Hormone (ADH), final amounts of water are reabsorbed based on the body\'s hydration needs. The remaining fluid is urine.' }
+                    ]
+                },
+                chart: {
+                    type: 'bar',
+                    title: 'Average Daily Water Output',
+                    description: 'The body must strictly balance water intake with water output to maintain blood pressure. The kidneys are the primary regulators of this output.',
+                    labels: ['Urine (Kidneys)', 'Insensible Loss (Skin/Lungs)', 'Sweat (Skin)', 'Feces (Intestines)'],
+                    data: [1500, 700, 200, 100], 
+                    colors: ['#eab308', '#94a3b8', '#38bdf8', '#84cc16'],
+                    yAxisLabel: 'Volume (mL/Day)'
+                }
+            },
+            reproductive: {
+                id: 'reproductive',
+                name: 'Reproductive System',
+                icon: '🧬',
+                subtitle: 'Continuation of the Species',
+                description: 'The biological system made up of all the anatomical organs involved in sexual reproduction. Its primary purpose is to produce, maintain, and transport gametes (sperm and egg cells) and protective fluid, and in females, to develop offspring.',
+                anatomy: [
+                    { name: 'Gonads (Testes/Ovaries)', icon: '🥚', desc: 'The primary reproductive organs. They produce the gametes (sperm in males, ova in females) and synthesize sex hormones (testosterone, estrogen, progesterone).' },
+                    { name: 'Duct Systems', icon: '🛣️', desc: 'Tubes that transport gametes. Includes the vas deferens and epididymis in males, and the fallopian tubes in females.' },
+                    { name: 'Accessory Glands', icon: '🧪', desc: 'Produce supportive fluids. In males (e.g., prostate, seminal vesicles), they create semen to nourish sperm. In females, glands provide lubrication.' },
+                    { name: 'Uterus & Genitalia', icon: '🏠', desc: 'The uterus provides a highly vascularized environment to nourish a developing fetus. External genitalia facilitate copulation.' }
+                ],
+                process: {
+                    title: 'Process of Fertilization',
+                    steps: [
+                        { name: '1. Capacitation', detail: 'While swimming through the female reproductive tract, secretions remove cholesterol from the sperm\'s membrane, making it fragile and preparing it to release enzymes.' },
+                        { name: '2. Acrosomal Reaction', detail: 'Sperm reach the oocyte. The acrosome (head of the sperm) bursts, releasing enzymes that digest a path through the protective corona radiata and zona pellucida surrounding the egg.' },
+                        { name: '3. Fusion', detail: 'A single sperm cell makes contact with the oocyte membrane. The membranes fuse, and the sperm nucleus is pulled into the egg\'s cytoplasm.' },
+                        { name: '4. Cortical Reaction (Block to Polyspermy)', detail: 'Immediately upon fusion, the oocyte releases enzymes that harden the zona pellucida, instantly destroying sperm receptors to prevent any other sperm from entering.' },
+                        { name: '5. Zygote Formation', detail: 'The male and female pronuclei fuse, combining their 23 chromosomes each to form a single diploid cell (zygote) with 46 chromosomes. Cell division begins.' }
+                    ]
+                },
+                chart: {
+                    type: 'pie',
+                    title: 'Composition of Semen by Volume',
+                    description: 'Semen is predominantly composed of fluids from accessory glands, not just sperm. These fluids provide energy, neutralize vaginal acidity, and coagulate the semen.',
+                    labels: ['Seminal Vesicles (Fructose/Coagulants)', 'Prostate Gland (Enzymes/Activation)', 'Spermatozoa (from Testes)', 'Bulbourethral Glands (Mucus)'],
+                    data: [60, 30, 5, 5],
+                    colors: ['#fbbf24', '#f87171', '#38bdf8', '#c084fc']
+                }
+            }
+        };
+
+        // --- Application Logic ---
+        
+        // State
+        let currentSystemId = null;
+        let myChart = null;
+
+        // DOM Elements
+        const systemListEl = document.getElementById('system-list');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const systemView = document.getElementById('system-view');
+        
+        // Initialization
+        function init() {
+            buildNavigation();
+            setupEventListeners();
+        }
+
+        // Build Sidebar Navigation
+        function buildNavigation() {
+            let navHtml = '';
+            Object.values(systemsData).forEach(sys => {
+                navHtml += `
+                    <li>
+                        <button class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-slate-700 hover:bg-white hover:shadow-sm transition-all focus:outline-none sys-nav-btn" data-id="${sys.id}">
+                            <span class="text-xl bg-white p-1.5 rounded shadow-sm">${sys.icon}</span>
+                            <span class="font-medium">${sys.name}</span>
+                        </button>
+                    </li>
+                `;
+            });
+            systemListEl.innerHTML = navHtml;
+            
+            // Attach listeners
+            document.querySelectorAll('.sys-nav-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => loadSystem(e.currentTarget.dataset.id));
+            });
+        }
+
+        // Load System Data into UI
+        function loadSystem(id) {
+            const data = systemsData[id];
+            if (!data) return;
+
+            currentSystemId = id;
+
+            // UI Transitions
+            welcomeScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                systemView.classList.remove('hidden');
+                systemView.classList.add('flex'); // Add this line to restore Flexbox layout!
+                
+                // Allow reflow before changing opacity
+                requestAnimationFrame(() => {
+                    systemView.classList.remove('opacity-0');
+                    systemView.classList.add('opacity-100');
+                });
+            }, 300);
+
+            // Update Active Nav Style
+            document.querySelectorAll('.sys-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm', 'border-l-4', 'border-sky-500');
+                if(btn.dataset.id === id) {
+                    btn.classList.add('bg-white', 'shadow-sm', 'border-l-4', 'border-sky-500');
+                }
+            });
+
+            // Populate Header
+            document.getElementById('system-icon').textContent = data.icon;
+            document.getElementById('system-title').textContent = data.name;
+            document.getElementById('system-subtitle').textContent = data.subtitle;
+            document.getElementById('system-description').textContent = data.description;
+
+            // Reset tabs to Anatomy
+            document.querySelector('[data-target="tab-anatomy"]').click();
+
+            // Populate Anatomy Grid
+            const anatomyGrid = document.getElementById('anatomy-grid');
+            anatomyGrid.innerHTML = data.anatomy.map(part => `
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex gap-4">
+                    <div class="text-4xl flex-shrink-0 bg-slate-50 h-16 w-16 flex items-center justify-center rounded-lg border border-slate-100">${part.icon}</div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-lg">${part.name}</h4>
+                        <p class="text-sm text-slate-600 mt-1 leading-relaxed">${part.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Populate Physiology Process
+            document.getElementById('process-title').textContent = data.process.title;
+            const processTimeline = document.getElementById('process-timeline');
+            processTimeline.innerHTML = data.process.steps.map((step, index) => `
+                <div class="process-step ${index === 0 ? 'active' : ''}" onclick="toggleProcessStep(this)">
+                    <div class="font-semibold text-slate-700">${step.name}</div>
+                    <div class="step-content">${step.detail}</div>
+                </div>
+            `).join('');
+
+            // Setup Chart Data
+            updateChart(data.chart);
+
+            // Close mobile menu if open
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        // Process Timeline Interaction
+        window.toggleProcessStep = function(element) {
+            // Optional: Close others (accordion style)
+            // document.querySelectorAll('.process-step').forEach(el => el.classList.remove('active'));
+            element.classList.toggle('active');
+        }
+
+        // Chart.js Implementation adhering to specific constraints
+        function updateChart(chartConfig) {
+            const ctx = document.getElementById('systemChart').getContext('2d');
+            
+            // Destroy existing chart to prevent overlap bugs
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            document.getElementById('chart-title').textContent = chartConfig.title;
+            document.getElementById('chart-desc').textContent = chartConfig.description;
+
+            const config = {
+                type: chartConfig.type,
+                data: {
+                    labels: chartConfig.labels,
+                    datasets: [{
+                        label: chartConfig.yAxisLabel || 'Value',
+                        data: chartConfig.data,
+                        backgroundColor: chartConfig.colors,
+                        borderWidth: 1,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // CRITICAL: allows chart container to dictate height
+                    plugins: {
+                        legend: {
+                            position: chartConfig.type === 'pie' || chartConfig.type === 'doughnut' ? 'right' : 'top',
+                            labels: {
+                                font: { family: "'Inter', sans-serif" },
+                                color: '#475569'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 12,
+                            titleFont: { size: 14, family: "'Inter', sans-serif" },
+                            bodyFont: { size: 13, family: "'Inter', sans-serif" },
+                            callbacks: {
+                                // Basic Label wrapping logic for tooltip
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null && chartConfig.type === 'bar') {
+                                        label += context.parsed.y;
+                                    } else {
+                                        label += context.parsed;
+                                    }
+                                    
+                                    // Simulated 16-char wrap if labels were very long
+                                    if(label.length > 30) {
+                                         return [label.substring(0,30), label.substring(30)];
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Specific options for bar charts
+            if (chartConfig.type === 'bar') {
+                config.options.scales = {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: chartConfig.yAxisLabel,
+                            color: '#64748b'
+                        },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            // Implement label wrapping for x-axis if needed
+                            callback: function(value, index, values) {
+                                let label = this.getLabelForValue(value);
+                                // Simple logic to wrap long labels
+                                if(label.length > 15) {
+                                    const words = label.split(' ');
+                                    if(words.length > 1) {
+                                        return [words.slice(0, Math.ceil(words.length/2)).join(' '), words.slice(Math.ceil(words.length/2)).join(' ')];
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                };
+            }
+
+            myChart = new Chart(ctx, config);
+        }
+
+        // Setup UI Event Listeners (Tabs & Mobile Menu)
+        function setupEventListeners() {
+            // Tab switching logic
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active state from all
+                    tabBtns.forEach(b => b.classList.remove('active', 'border-sky-500', 'text-sky-600'));
+                    tabPanes.forEach(p => p.classList.add('hidden'));
+
+                    // Add active state to clicked
+                    btn.classList.add('active', 'border-sky-500', 'text-sky-600');
+                    const targetId = btn.getAttribute('data-target');
+                    const targetPane = document.getElementById(targetId);
+                    targetPane.classList.remove('hidden');
+
+                    // If switching to data tab, force chart update to ensure correct rendering size
+                    if(targetId === 'tab-data' && myChart) {
+                        myChart.resize();
+                    }
+                });
+            });
+
+            // Mobile menu toggle
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            mobileBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+
+        // Run
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

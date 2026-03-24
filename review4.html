@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phytohormones: Synthesis & Regulation Study Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Embedded CSS for strict Chart Container sizing and basic animations */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 50vh;
+            min-height: 300px;
+            max-height: 500px;
+        }
+        
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 40vh;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pathway-step {
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active {
+            border-bottom: 2px solid #047857; /* emerald-700 */
+            color: #047857;
+            font-weight: 600;
+        }
+    </style>
+
+    <!-- Chosen Palette: Warm Botanical Neutrals -->
+    <!-- Application Structure Plan: 
+         The SPA is structured as an interactive digital textbook, utilizing a sticky sidebar navigation (on desktop) to allow students to easily jump between complex physiological concepts. 
+         1. "Fundamentals": Establishes baseline knowledge of the 'Big Five' hormones.
+         2. "Deep Dive: Auxins (IAA)": The core request. Uses an interactive, step-by-step HTML-based flow diagram to break down the complex Tryptophan-dependent synthesis pathway, making it digestible rather than overwhelming.
+         3. "Other Hormones": Uses a tabbed interface to organize the synthesis and regulation of GA, CK, ABA, and Ethylene, preventing the page from becoming an endlessly long scroll of text.
+         4. "Hormonal Interplay": Features a dynamic line chart showing how hormone levels shift across plant life stages, reinforcing the concept that development is regulated by balances, not isolated hormones.
+    -->
+    <!-- Visualization & Content Choices: 
+         - Goal: Explain IAA Synthesis Pathway. -> Method: Interactive Step-by-Step HTML Diagram. -> Interaction: 'Next Step' button reveals enzymes and metabolites sequentially. -> Justification: Complex biochemical pathways are easier to learn when built piece-by-piece. NO SVG/Mermaid used; built entirely with DOM elements and Unicode arrows.
+         - Goal: Compare Secondary Hormone Pathways. -> Method: Tabbed Interface. -> Interaction: Click tabs to swap content. -> Justification: Groups related content logically without cluttering the viewport.
+         - Goal: Show Hormonal Balance over Time. -> Method: Line Chart (Chart.js). -> Interaction: Hover tooltips, legend toggling. -> Justification: Line charts are optimal for showing continuous biological trends over developmental time.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans leading-relaxed selection:bg-emerald-200 selection:text-emerald-900">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl text-emerald-700">&#127807;</span>
+                <h1 class="text-xl font-bold text-stone-900 tracking-tight">Plant Growth & Dev <span class="text-emerald-700 font-medium">| Phytohormones</span></h1>
+            </div>
+            <nav class="hidden md:flex gap-6 text-sm font-medium text-stone-600">
+                <a href="#basics" class="hover:text-emerald-700 transition-colors">Fundamentals</a>
+                <a href="#iaa-pathway" class="hover:text-emerald-700 transition-colors">IAA Deep Dive</a>
+                <a href="#other-hormones" class="hover:text-emerald-700 transition-colors">Other Hormones</a>
+                <a href="#interplay" class="hover:text-emerald-700 transition-colors">Hormone Interplay</a>
+            </nav>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" class="md:hidden text-stone-500 hover:text-stone-900 text-2xl">
+                &#9776;
+            </button>
+        </div>
+        <!-- Mobile Nav -->
+        <div id="mobile-nav" class="hidden md:hidden bg-stone-100 border-b border-stone-200 px-4 py-2 space-y-2 text-sm font-medium">
+            <a href="#basics" class="block py-2 text-stone-700">Fundamentals</a>
+            <a href="#iaa-pathway" class="block py-2 text-stone-700">IAA Deep Dive</a>
+            <a href="#other-hormones" class="block py-2 text-stone-700">Other Hormones</a>
+            <a href="#interplay" class="block py-2 text-stone-700">Hormone Interplay</a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- Sidebar Table of Contents -->
+        <aside class="hidden md:block w-64 shrink-0">
+            <div class="sticky top-24 bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">Study Navigation</h3>
+                <ul class="space-y-3 text-sm border-l border-stone-200 pl-4">
+                    <li><a href="#basics" class="text-stone-600 hover:text-emerald-700 block -ml-[17px] pl-4 border-l-2 border-transparent hover:border-emerald-500 transition-all">1. Fundamentals</a></li>
+                    <li>
+                        <a href="#iaa-pathway" class="text-stone-600 hover:text-emerald-700 block -ml-[17px] pl-4 border-l-2 border-transparent hover:border-emerald-500 transition-all">2. Auxin (IAA) Synthesis</a>
+                        <ul class="pl-4 mt-2 space-y-2 text-xs text-stone-500">
+                            <li><a href="#iaa-interactive" class="hover:text-emerald-600">Interactive Pathway</a></li>
+                            <li><a href="#iaa-regulation" class="hover:text-emerald-600">Regulation Mechanisms</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#other-hormones" class="text-stone-600 hover:text-emerald-700 block -ml-[17px] pl-4 border-l-2 border-transparent hover:border-emerald-500 transition-all">3. Secondary Hormones</a></li>
+                    <li><a href="#interplay" class="text-stone-600 hover:text-emerald-700 block -ml-[17px] pl-4 border-l-2 border-transparent hover:border-emerald-500 transition-all">4. Developmental Interplay</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 space-y-16">
+
+            <!-- Section 1: Basics -->
+            <section id="basics" class="scroll-mt-24">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">1. Phytohormone Fundamentals</h2>
+                    <p class="text-stone-600 text-lg">
+                        This section outlines the basic definition and primary classes of phytohormones. Understanding these broad categories is required before analyzing their specific biochemical synthesis pathways. Hormones act as chemical messengers coordinating plant growth, development, and responses to stimuli at very low concentrations.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Hormone Cards -->
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-2xl mb-2">&#127793;</div>
+                        <h4 class="font-bold text-lg mb-1">Auxins (IAA)</h4>
+                        <p class="text-sm text-stone-600">Cell elongation, apical dominance, root initiation. Synthesized primarily in shoot apical meristems.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-2xl mb-2">&#127808;</div>
+                        <h4 class="font-bold text-lg mb-1">Gibberellins (GA)</h4>
+                        <p class="text-sm text-stone-600">Stem elongation, seed germination, flowering. Synthesized in young tissues and developing seeds.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-2xl mb-2">&#127811;</div>
+                        <h4 class="font-bold text-lg mb-1">Cytokinins (CK)</h4>
+                        <p class="text-sm text-stone-600">Cell division, delay of senescence. Synthesized primarily in root tips and transported upwards.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-2xl mb-2">&#127810;</div>
+                        <h4 class="font-bold text-lg mb-1">Abscisic Acid (ABA)</h4>
+                        <p class="text-sm text-stone-600">Stress response (drought), stomatal closure, seed dormancy. Synthesized in mature leaves and roots.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="text-2xl mb-2">&#127818;</div>
+                        <h4 class="font-bold text-lg mb-1">Ethylene</h4>
+                        <p class="text-sm text-stone-600">Fruit ripening, senescence, leaf abscission. A gaseous hormone synthesized in aging tissues.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: IAA Deep Dive -->
+            <section id="iaa-pathway" class="scroll-mt-24 bg-white p-6 md:p-8 rounded-2xl border border-stone-200 shadow-sm">
+                <div class="mb-6">
+                    <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full mb-3 uppercase tracking-wider">Primary Competency</span>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-4">2. Detailed Synthesis & Regulation: Indole-3-Acetic Acid (IAA)</h2>
+                    <p class="text-stone-600">
+                        Indole-3-acetic acid (IAA) is the most abundant naturally occurring auxin. Its synthesis is highly regulated. Plants utilize multiple pathways to synthesize IAA, mostly originating from the amino acid <strong>Tryptophan (Trp)</strong>. This section allows you to interactively step through the dominant Tryptophan-dependent pathway (the IPA pathway) and explore how IAA pools are regulated within the cell.
+                    </p>
+                </div>
+
+                <!-- Interactive Pathway Builder -->
+                <div id="iaa-interactive" class="bg-stone-50 rounded-xl p-6 border border-stone-200 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-stone-800">The IPA Pathway (Tryptophan-Dependent)</h3>
+                        <div class="space-x-2">
+                            <button id="btn-reset-pathway" class="px-3 py-1.5 text-sm font-medium text-stone-500 bg-stone-200 rounded hover:bg-stone-300 transition-colors">Reset</button>
+                            <button id="btn-next-step" class="px-4 py-1.5 text-sm font-bold text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors shadow-sm">Next Step &#8594;</button>
+                        </div>
+                    </div>
+
+                    <!-- Pathway Container (Pure HTML/CSS structure, NO SVG) -->
+                    <div class="flex flex-col items-center justify-center py-4 min-h-[400px]">
+                        
+                        <!-- Step 1 -->
+                        <div id="step-1" class="pathway-step w-64 bg-white p-4 rounded-lg border-2 border-stone-300 text-center shadow-sm">
+                            <span class="text-xs text-stone-500 uppercase font-bold">Precursor</span>
+                            <div class="font-bold text-lg text-emerald-800">L-Tryptophan (Trp)</div>
+                            <div class="text-xs mt-1 text-stone-500">(Amino Acid Pool)</div>
+                        </div>
+
+                        <!-- Arrow 1 -->
+                        <div id="arrow-1" class="pathway-step hidden flex-col items-center my-2 opacity-0">
+                            <div class="h-8 border-l-2 border-dashed border-stone-400"></div>
+                            <div class="text-stone-400 -mt-2">&#9660;</div>
+                            <div class="bg-blue-50 text-blue-800 border border-blue-200 text-xs px-2 py-1 rounded absolute ml-40 shadow-sm">
+                                <strong>Enzyme:</strong> TAA1<br>
+                                (Tryptophan aminotransferase)
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div id="step-2" class="pathway-step hidden w-64 bg-white p-4 rounded-lg border-2 border-stone-300 text-center shadow-sm opacity-0">
+                            <span class="text-xs text-stone-500 uppercase font-bold">Intermediate</span>
+                            <div class="font-bold text-lg text-emerald-800">Indole-3-Pyruvic Acid (IPA)</div>
+                        </div>
+
+                        <!-- Arrow 2 -->
+                        <div id="arrow-2" class="pathway-step hidden flex-col items-center my-2 opacity-0">
+                            <div class="h-8 border-l-2 border-dashed border-stone-400"></div>
+                            <div class="text-stone-400 -mt-2">&#9660;</div>
+                            <div class="bg-blue-50 text-blue-800 border border-blue-200 text-xs px-2 py-1 rounded absolute ml-40 shadow-sm">
+                                <strong>Enzyme:</strong> YUCCA (YUC)<br>
+                                (Flavin monooxygenase)
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div id="step-3" class="pathway-step hidden w-64 bg-emerald-100 p-4 rounded-lg border-2 border-emerald-500 text-center shadow-md opacity-0">
+                            <span class="text-xs text-emerald-700 uppercase font-bold">Active Hormone</span>
+                            <div class="font-bold text-xl text-emerald-900">Indole-3-Acetic Acid (IAA)</div>
+                        </div>
+                    </div>
+                    
+                    <div id="pathway-explanation" class="mt-6 text-sm text-stone-600 bg-white p-4 rounded border border-stone-100 hidden slide-up">
+                        <strong>Summary:</strong> The most critical auxin biosynthesis pathway involves the conversion of L-Tryptophan to IPA by the TAA family of aminotransferases, followed by the rate-limiting conversion of IPA to IAA by YUCCA family flavin monooxygenases.
+                    </div>
+                </div>
+
+                <!-- Regulation Section -->
+                <div id="iaa-regulation" class="mt-12">
+                    <h3 class="text-xl font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2">Regulation of IAA Homeostasis</h3>
+                    <p class="mb-4 text-stone-600">Cells must tightly control the amount of active IAA. This is achieved through a combination of synthesis, conjugation, degradation, and transport.</p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-stone-50 p-4 rounded-lg border-l-4 border-blue-500">
+                            <div class="font-bold text-stone-800 mb-2 flex justify-between items-center">
+                                Conjugation
+                                <span class="text-lg">&#128274;</span>
+                            </div>
+                            <p class="text-sm text-stone-600">IAA is reversibly bound to amino acids (e.g., via <strong>GH3</strong> enzymes) or sugars. Conjugates are inactive storage forms that can be hydrolyzed back to free IAA when needed.</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border-l-4 border-red-500">
+                            <div class="font-bold text-stone-800 mb-2 flex justify-between items-center">
+                                Degradation
+                                <span class="text-lg">&#128465;</span>
+                            </div>
+                            <p class="text-sm text-stone-600">Irreversible breakdown of active IAA. The main pathway involves oxidation to oxIAA by <strong>DAO</strong> (Dioxygenase for auxin oxidation) enzymes, preventing toxic auxin accumulation.</p>
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-lg border-l-4 border-purple-500">
+                            <div class="font-bold text-stone-800 mb-2 flex justify-between items-center">
+                                Transport (PAT)
+                                <span class="text-lg">&#8645;</span>
+                            </div>
+                            <p class="text-sm text-stone-600">Polar Auxin Transport utilizes influx carriers (<strong>AUX1/LAX</strong>) and efflux carriers (<strong>PIN</strong> proteins). Asymmetric PIN localization directs auxin flow, establishing gradients crucial for organogenesis.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Other Hormones -->
+            <section id="other-hormones" class="scroll-mt-24">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">3. Synthesis & Regulation of Other Major Hormones</h2>
+                    <p class="text-stone-600">
+                        While Auxin is foundational, plant development requires the coordinated action of multiple hormones. This section summarizes the basic synthesis and regulatory logic for Gibberellins, Cytokinins, ABA, and Ethylene. Click the tabs to switch between hormone profiles.
+                    </p>
+                </div>
+
+                <!-- Tabs UI -->
+                <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                    <div class="flex border-b border-stone-200 overflow-x-auto">
+                        <button class="tab-btn active px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-700 hover:bg-stone-50 transition-colors whitespace-nowrap" data-target="tab-ga">Gibberellins (GA)</button>
+                        <button class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-700 hover:bg-stone-50 transition-colors whitespace-nowrap" data-target="tab-ck">Cytokinins (CK)</button>
+                        <button class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-700 hover:bg-stone-50 transition-colors whitespace-nowrap" data-target="tab-aba">Abscisic Acid (ABA)</button>
+                        <button class="tab-btn px-6 py-4 text-sm font-medium text-stone-600 hover:text-emerald-700 hover:bg-stone-50 transition-colors whitespace-nowrap" data-target="tab-eth">Ethylene</button>
+                    </div>
+
+                    <div class="p-6 md:p-8">
+                        <!-- GA Tab -->
+                        <div id="tab-ga" class="tab-content fade-in">
+                            <h3 class="text-xl font-bold text-stone-800 mb-4">Gibberellin (GA) Pathway</h3>
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Synthesis</h4>
+                                    <p class="text-sm text-stone-600 mb-3">Terpenoid pathway originating in plastids.</p>
+                                    <div class="bg-stone-50 p-3 rounded font-mono text-sm border border-stone-200">
+                                        GGPP &#8594; <span class="text-stone-500 text-xs">(CPS/KS)</span> &#8594; ent-Kaurene &#8594; <span class="text-stone-500 text-xs">(KO/KAO)</span> &#8594; GA12 &#8594; <span class="text-emerald-600 font-bold">Bioactive GA (GA1, GA4)</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Regulation</h4>
+                                    <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                        <li><strong>Activation:</strong> GA20ox and GA3ox enzymes catalyze final steps to active forms.</li>
+                                        <li><strong>Deactivation:</strong> GA2ox enzymes hydroxylate active GAs to inactive forms (e.g., GA29, GA34).</li>
+                                        <li>Feedback loop: High GA levels inhibit GA20ox/GA3ox and promote GA2ox.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CK Tab -->
+                        <div id="tab-ck" class="tab-content hidden">
+                            <h3 class="text-xl font-bold text-stone-800 mb-4">Cytokinin (CK) Pathway</h3>
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Synthesis</h4>
+                                    <p class="text-sm text-stone-600 mb-3">Derived from adenine and an isoprenoid side chain.</p>
+                                    <div class="bg-stone-50 p-3 rounded font-mono text-sm border border-stone-200">
+                                        ATP/ADP/AMP + DMAPP &#8594; <span class="text-stone-500 text-xs">(IPT enzyme)</span> &#8594; iPRTP/iPDP/iPMP &#8594; <span class="text-emerald-600 font-bold">Active CKs (Zeatin, iP)</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Regulation</h4>
+                                    <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                        <li><strong>Degradation:</strong> Cytokinin oxidase/dehydrogenase (CKX) irreversibly cleaves the side chain, destroying activity.</li>
+                                        <li><strong>Conjugation:</strong> Reversible conjugation to glucose (O-glucosylation) or irreversible conjugation (N-glucosylation).</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA Tab -->
+                        <div id="tab-aba" class="tab-content hidden">
+                            <h3 class="text-xl font-bold text-stone-800 mb-4">Abscisic Acid (ABA) Pathway</h3>
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Synthesis</h4>
+                                    <p class="text-sm text-stone-600 mb-3">Synthesized from carotenoids (C40) in plastids, finished in cytosol.</p>
+                                    <div class="bg-stone-50 p-3 rounded font-mono text-sm border border-stone-200">
+                                        Zeaxanthin &#8594; Violaxanthin &#8594; <span class="text-stone-500 text-xs">(NCED)</span> &#8594; Xanthoxin &#8594; <span class="text-emerald-600 font-bold">ABA</span>
+                                    </div>
+                                    <p class="text-xs text-stone-500 mt-2">*NCED (9-cis-epoxycarotenoid dioxygenase) is the key rate-limiting step, highly upregulated by drought stress.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Regulation</h4>
+                                    <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                        <li><strong>Catabolism:</strong> Hydroxylation via CYP707A enzymes (cytochrome P450s) to phaseic acid (PA), which is inactive.</li>
+                                        <li><strong>Conjugation:</strong> Stored as ABA-glucose ester (ABA-GE) in vacuoles; rapidly hydrolyzed by BG1 (β-glucosidase) under stress.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ethylene Tab -->
+                        <div id="tab-eth" class="tab-content hidden">
+                            <h3 class="text-xl font-bold text-stone-800 mb-4">Ethylene Pathway</h3>
+                            <div class="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Synthesis</h4>
+                                    <p class="text-sm text-stone-600 mb-3">Derived from the amino acid Methionine (Yang Cycle).</p>
+                                    <div class="bg-stone-50 p-3 rounded font-mono text-sm border border-stone-200">
+                                        Methionine &#8594; SAM &#8594; <span class="text-stone-500 text-xs">(ACS)</span> &#8594; ACC &#8594; <span class="text-stone-500 text-xs">(ACO)</span> &#8594; <span class="text-emerald-600 font-bold">Ethylene (Gas)</span>
+                                    </div>
+                                    <p class="text-xs text-stone-500 mt-2">*ACS (ACC synthase) is the main regulatory node. ACO (ACC oxidase) requires oxygen.</p>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-stone-700 mb-2 border-b border-stone-100 pb-1">Regulation</h4>
+                                    <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                        <li><strong>Transcriptional/Post-Translational:</strong> ACS enzymes are highly regulated at the protein stability level (phosphorylated/degraded via proteasome).</li>
+                                        <li><strong>Feedback:</strong> Can exhibit autoinhibition (vegetative tissues) or autocatalysis (ripening climacteric fruits).</li>
+                                        <li>Since it's a gas, it diffuses away easily; synthesis rates dictate internal concentration.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: Chart -->
+            <section id="interplay" class="scroll-mt-24 mb-16">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">4. Hormonal Interplay & Development</h2>
+                    <p class="text-stone-600">
+                        Hormones rarely act alone. Plant development is driven by changing ratios and cross-talk between these pathways over time. The interactive chart below visualizes a generalized model of relative hormone concentrations across major plant developmental stages. Use the legend to toggle specific hormones.
+                    </p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+                    <h3 class="text-lg font-bold text-center text-stone-800 mb-4">Relative Phytohormone Levels During Plant Life Cycle</h3>
+                    <!-- Chart Container per constraints -->
+                    <div class="chart-container">
+                        <canvas id="hormoneChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-stone-500 mt-4 italic">
+                        Note: This is a conceptual pedagogical model illustrating trends. Actual concentrations vary heavily by species, specific tissue type, and environmental conditions.
+                    </p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 border-t border-stone-800 text-center text-sm">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>&copy; 2026 Plant Physiology Interactive Study Guides. Created for Educational Purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileNav = document.getElementById('mobile-nav');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Navigation Logic
+        mobileBtn.addEventListener('click', () => {
+            mobileNav.classList.toggle('hidden');
+        });
+
+        mobileNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileNav.classList.add('hidden');
+            });
+        });
+
+        // Tab Logic for Other Hormones
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => {
+                    c.classList.add('hidden');
+                    c.classList.remove('fade-in');
+                });
+                
+                // Add active to clicked
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                const targetContent = document.getElementById(targetId);
+                targetContent.classList.remove('hidden');
+                
+                // Force reflow for animation
+                void targetContent.offsetWidth;
+                targetContent.classList.add('fade-in');
+            });
+        });
+
+        // IAA Interactive Pathway Logic
+        let currentStep = 1;
+        const maxSteps = 3;
+        const btnNext = document.getElementById('btn-next-step');
+        const btnReset = document.getElementById('btn-reset-pathway');
+        const explanation = document.getElementById('pathway-explanation');
+
+        btnNext.addEventListener('click', () => {
+            if (currentStep < maxSteps) {
+                // Show arrow leading to next step
+                const arrow = document.getElementById(`arrow-${currentStep}`);
+                arrow.classList.remove('hidden');
+                setTimeout(() => arrow.classList.add('fade-in'), 10);
+                
+                currentStep++;
+                
+                // Show next step
+                setTimeout(() => {
+                    const stepEl = document.getElementById(`step-${currentStep}`);
+                    stepEl.classList.remove('hidden');
+                    setTimeout(() => stepEl.classList.add('slide-up', 'opacity-100'), 10);
+                }, 300); // slight delay for arrow rendering
+                
+                if (currentStep === maxSteps) {
+                    btnNext.disabled = true;
+                    btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+                    setTimeout(() => {
+                        explanation.classList.remove('hidden');
+                    }, 600);
+                }
+            }
+        });
+
+        btnReset.addEventListener('click', () => {
+            currentStep = 1;
+            btnNext.disabled = false;
+            btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Hide all except step 1
+            [2, 3].forEach(step => {
+                const el = document.getElementById(`step-${step}`);
+                el.classList.add('hidden');
+                el.classList.remove('slide-up', 'opacity-100');
+            });
+            [1, 2].forEach(step => {
+                const arr = document.getElementById(`arrow-${step}`);
+                arr.classList.add('hidden');
+                arr.classList.remove('fade-in');
+            });
+            
+            explanation.classList.add('hidden');
+        });
+
+        // Chart.js Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('hormoneChart').getContext('2d');
+            
+            // Standardizing Chart colors with Tailwind palette
+            const colors = {
+                auxin: '#047857', // emerald-700
+                ga: '#3b82f6', // blue-500
+                aba: '#f59e0b', // amber-500
+                ethylene: '#ef4444', // red-500
+                ck: '#8b5cf6' // violet-500
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Dormant Seed', 'Germination', 'Vegetative Growth', 'Flowering/Anthesis', 'Fruit Ripening', 'Senescence'],
+                    datasets: [
+                        {
+                            label: 'Abscisic Acid (ABA)',
+                            data: [90, 10, 20, 30, 40, 60],
+                            borderColor: colors.aba,
+                            backgroundColor: colors.aba + '20',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Gibberellins (GA)',
+                            data: [10, 80, 60, 70, 20, 5],
+                            borderColor: colors.ga,
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Auxins (IAA)',
+                            data: [5, 30, 85, 60, 70, 10],
+                            borderColor: colors.auxin,
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Cytokinins (CK)',
+                            data: [5, 40, 70, 50, 20, 5],
+                            borderColor: colors.ck,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Ethylene',
+                            data: [5, 5, 10, 30, 95, 80],
+                            borderColor: colors.ethylene,
+                            backgroundColor: colors.ethylene + '15',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Required to respect .chart-container dimensions
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 13
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(28, 25, 23, 0.9)', // stone-900
+                            titleFont: { size: 14, family: "'Inter', sans-serif" },
+                            bodyFont: { size: 13, family: "'Inter', sans-serif" },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                // Add wrap logic if labels were long (16 char requirement)
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += 'Relative Lvl ' + context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Relative Concentration Level',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    weight: 'bold'
+                                }
+                            },
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: '#e7e5e4', // stone-200
+                                borderDash: [5, 5]
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

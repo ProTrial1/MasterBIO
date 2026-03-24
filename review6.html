@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicrobeHub | Interactive Microbiology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code&display=swap');
+        
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #3b82f6;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .microbe-canvas-container {
+            height: 400px;
+            width: 100%;
+            position: relative;
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .nav-link.active {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .lab-tool {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .lab-tool:hover:not(.disabled) {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .lab-tool.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .classification-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .classification-card:hover {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .diff-tag {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .active-step { animation: pulse-ring 2s infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="glass-panel sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-emerald-500 p-2 rounded-lg">
+                <i class="fas fa-microscope text-white text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Microbe<span class="text-emerald-400">Hub</span></h1>
+        </div>
+        <nav class="hidden md:flex space-x-8">
+            <button onclick="switchTab('explorer')" class="nav-link active font-medium" id="tab-explorer">3D Explorer</button>
+            <button onclick="switchTab('classification')" class="nav-link font-medium" id="tab-classification">Taxonomy</button>
+            <button onclick="switchTab('lab')" class="nav-link font-medium" id="tab-lab">Virtual Lab</button>
+            <button onclick="switchTab('assistant')" class="nav-link font-medium" id="tab-assistant">Study AI</button>
+        </nav>
+        <div class="flex items-center space-x-4">
+            <span class="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded">UG-Microbio v1.5</span>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        
+        <!-- SECTION: 3D MICROBE EXPLORER -->
+        <section id="section-explorer" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="microbe-canvas-container shadow-2xl border border-slate-700" id="canvas-wrapper">
+                        <div id="canvas-loading" class="absolute inset-0 flex items-center justify-center bg-slate-900 z-10">
+                            <div class="text-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
+                                <p class="text-xs mt-4 text-slate-400">Initializing Biorender...</p>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-4 left-4 bg-black/50 p-2 rounded text-xs text-white backdrop-blur">
+                            Drag to rotate • Scroll to zoom
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                        <button onclick="loadModel('bacillus')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition whitespace-nowrap">Bacillus (Rod)</button>
+                        <button onclick="loadModel('coccus')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition whitespace-nowrap">Coccus (Sphere)</button>
+                        <button onclick="loadModel('spirillum')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition whitespace-nowrap">Spirillum (Spiral)</button>
+                        <button onclick="loadModel('virus')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition whitespace-nowrap">Bacteriophage</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="glass-panel p-6 rounded-2xl h-full flex flex-col">
+                        <div class="mb-4">
+                            <span id="entity-class" class="text-[10px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Class Placeholder</span>
+                            <h2 class="text-2xl font-bold mt-2 text-white" id="entity-title">Microbial Entity</h2>
+                        </div>
+                        <div id="entity-desc" class="text-slate-300 leading-relaxed text-sm flex-grow">
+                            Select a microorganism to explore its phylogeny and clinical relevance.
+                        </div>
+                        <div class="mt-6 pt-6 border-t border-slate-700">
+                            <h4 class="font-bold text-emerald-400 text-xs mb-3 flex items-center">
+                                <i class="fas fa-dna mr-2"></i> TYPICAL GENERA
+                            </h4>
+                            <div id="entity-genera" class="flex flex-wrap gap-2">
+                                <!-- Genera tags -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: TAXONOMY & DIFFERENTIATION -->
+        <section id="section-classification" class="hidden space-y-8 animate-in fade-in duration-500">
+            <div class="glass-panel p-8 rounded-2xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-white">Bacterial Differentiation & Systematics</h2>
+                    <p class="text-slate-400 mt-2 max-w-3xl mx-auto">Differentiation is the process of distinguishing bacteria based on their unique structural, physiological, and biochemical characteristics.</p>
+                </div>
+
+                <!-- Structural Differentiation Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                    <!-- Gram-Positive -->
+                    <div class="p-5 bg-purple-900/10 border border-purple-500/20 rounded-2xl hover:border-purple-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-purple-500/20 p-2 rounded-lg text-purple-400"><i class="fas fa-layer-group"></i></div>
+                            <span class="diff-tag bg-purple-500/20 text-purple-400">Gram Positive</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm mb-2">Thick Peptidoglycan</h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">Contains <strong>Teichoic acids</strong>. No outer membrane. Stains purple. High resistance to physical stress.</p>
+                        <div class="mt-3 flex gap-1">
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">Bacillus</span>
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">Staph</span>
+                        </div>
+                    </div>
+
+                    <!-- Gram-Negative -->
+                    <div class="p-5 bg-rose-900/10 border border-rose-500/20 rounded-2xl hover:border-rose-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-rose-500/20 p-2 rounded-lg text-rose-400"><i class="fas fa-shield-halved"></i></div>
+                            <span class="diff-tag bg-rose-500/20 text-rose-400">Gram Negative</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm mb-2">Outer Membrane (LPS)</h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">Thin PG layer. Contains <strong>Lipopolysaccharide</strong> and Porins. Stains pink. Higher antibiotic resistance.</p>
+                        <div class="mt-3 flex gap-1">
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">E. coli</span>
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">Salmonella</span>
+                        </div>
+                    </div>
+
+                    <!-- Acid-Fast -->
+                    <div class="p-5 bg-orange-900/10 border border-orange-500/20 rounded-2xl hover:border-orange-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-orange-500/20 p-2 rounded-lg text-orange-400"><i class="fas fa-droplet-slash"></i></div>
+                            <span class="diff-tag bg-orange-500/20 text-orange-400">Acid-Fast</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm mb-2">Mycolic Acids</h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">Waxy cell wall high in lipids. Resists Gram staining. Requires <strong>Ziehl-Neelsen</strong> stain.</p>
+                        <div class="mt-3 flex gap-1">
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">Mycobacterium</span>
+                        </div>
+                    </div>
+
+                    <!-- Wall-less -->
+                    <div class="p-5 bg-blue-900/10 border border-blue-500/20 rounded-2xl hover:border-blue-500/50 transition-colors">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-blue-500/20 p-2 rounded-lg text-blue-400"><i class="fas fa-ghost"></i></div>
+                            <span class="diff-tag bg-blue-500/20 text-blue-400">Atypical</span>
+                        </div>
+                        <h4 class="font-bold text-white text-sm mb-2">No Cell Wall</h4>
+                        <p class="text-[10px] text-slate-400 leading-relaxed">Lacks peptidoglycan entirely. Cell membrane contains <strong>Sterols</strong> for stability. Pleomorphic shape.</p>
+                        <div class="mt-3 flex gap-1">
+                            <span class="text-[9px] bg-slate-800 px-2 py-1 rounded italic text-slate-500">Mycoplasma</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Differentiation by Oxygen & Metabolism -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div class="space-y-6">
+                        <div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-white mb-4 flex items-center"><i class="fas fa-wind mr-2 text-emerald-500"></i> Oxygen Requirements</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <span class="text-xs font-bold text-slate-200">Obligate Aerobes</span>
+                                    <span class="text-[10px] text-slate-500">Requires $O_2$ (Catalase+)</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <span class="text-xs font-bold text-slate-200">Facultative Anaerobes</span>
+                                    <span class="text-[10px] text-slate-500">Grows with or without $O_2$</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <span class="text-xs font-bold text-slate-200">Obligate Anaerobes</span>
+                                    <span class="text-[10px] text-rose-500">$O_2$ is toxic (Lacks SOD)</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                                    <span class="text-xs font-bold text-slate-200">Microaerophiles</span>
+                                    <span class="text-[10px] text-slate-500">Low $[O_2]$ required (2-10%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-white mb-4 flex items-center"><i class="fas fa-dna mr-2 text-blue-500"></i> Phylogenetic Hierarchy</h4>
+                            <div class="space-y-1">
+                                <div class="flex items-center text-[11px] p-2 bg-emerald-500/10 border-l-2 border-emerald-500">
+                                    <span class="w-24 font-mono text-emerald-400">DOMAIN</span>
+                                    <span class="text-slate-300">Bacteria</span>
+                                </div>
+                                <div class="flex items-center text-[11px] p-2 bg-slate-800 ml-4 border-l-2 border-slate-600">
+                                    <span class="w-24 font-mono text-slate-400">PHYLUM</span>
+                                    <span class="text-slate-300">Firmicutes (Low G+C)</span>
+                                </div>
+                                <div class="flex items-center text-[11px] p-2 bg-slate-800 ml-8 border-l-2 border-slate-600">
+                                    <span class="w-24 font-mono text-slate-400">CLASS</span>
+                                    <span class="text-slate-300">Bacilli</span>
+                                </div>
+                                <div class="flex items-center text-[11px] p-2 bg-emerald-500/20 ml-12 border-l-2 border-emerald-400">
+                                    <span class="w-24 font-mono text-emerald-400">GENUS</span>
+                                    <span class="text-slate-100 italic">Bacillus</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                            <h4 class="font-bold text-white mb-4 flex items-center"><i class="fas fa-vial mr-2 text-orange-500"></i> Biochemical Differentiation</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catalase Test</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Differentiates <i>Staphylococcus</i> (+) from <i>Streptococcus</i> (-). Tests for the enzyme that breaks down $H_2O_2$.</p>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Oxidase Test</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Identifies bacteria with <strong>Cytochrome c oxidase</strong>. Differentiates <i>Pseudomonas</i> (+) from <i>Enterobacteriaceae</i> (-).</p>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Coagulase Test</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Differentiates <i>S. aureus</i> (+) from other Staphylococci. Tests for fibrin clot formation.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-500/5 p-6 rounded-2xl border border-emerald-500/20">
+                            <h4 class="font-bold text-emerald-400 mb-2 text-sm">Differentiation Summary</h4>
+                            <p class="text-[11px] text-slate-300 leading-relaxed italic">
+                                "The classification of bacteria has moved from strictly phenotypic (how they look/react) to genotypic (their genetic sequence). 16S rRNA sequencing is the modern gold standard for defining species."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: VIRTUAL LAB -->
+        <section id="section-lab" class="hidden space-y-6">
+            <div class="glass-panel p-8 rounded-2xl">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controls Column -->
+                    <div class="lg:w-1/3 space-y-4">
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-700">
+                            <h3 class="font-bold text-white text-sm mb-4 border-b border-slate-700 pb-2 flex justify-between">
+                                <span>DIAGNOSTIC WORKFLOW</span>
+                                <span class="text-[10px] text-emerald-500">Step <span id="lab-step-num">0</span>/5</span>
+                            </h3>
+                            <div class="space-y-4">
+                                <button onclick="labAction('smear')" id="btn-smear" class="lab-tool w-full p-4 bg-slate-800 border border-slate-600 rounded-xl text-left hover:border-emerald-500 transition active-step">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-hand-sparkles text-emerald-400 mr-3"></i>
+                                            <span class="text-sm font-bold">1. Fix Smear</span>
+                                        </div>
+                                        <i class="fas fa-circle-check text-slate-600 step-icon" id="icon-smear"></i>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mt-1">Bind cells using heat</p>
+                                </button>
+
+                                <div class="space-y-2">
+                                    <p class="text-[10px] uppercase font-bold text-slate-500 px-1">2. Staining Sequence</p>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button onclick="labAction('cv')" id="btn-cv" class="lab-tool disabled p-3 bg-purple-900/20 border border-purple-900/40 rounded-lg text-[10px] font-bold text-purple-400 uppercase tracking-tighter">Crystal Violet</button>
+                                        <button onclick="labAction('iodine')" id="btn-iodine" class="lab-tool disabled p-3 bg-amber-900/20 border border-amber-900/40 rounded-lg text-[10px] font-bold text-amber-400 uppercase tracking-tighter">Iodine</button>
+                                        <button onclick="labAction('alcohol')" id="btn-alcohol" class="lab-tool disabled p-3 bg-slate-900 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Alcohol</button>
+                                        <button onclick="labAction('safranin')" id="btn-safranin" class="lab-tool disabled p-3 bg-rose-900/20 border border-rose-900/40 rounded-lg text-[10px] font-bold text-rose-400 uppercase tracking-tighter">Safranin</button>
+                                    </div>
+                                </div>
+
+                                <button onclick="labAction('examine')" id="btn-examine" class="lab-tool disabled w-full p-4 bg-blue-900/20 border border-blue-900/40 rounded-xl text-left transition">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-microscope text-blue-400 mr-3 animate-bounce"></i>
+                                        <span class="text-sm font-bold">3. Identify Microbes</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Reference Info -->
+                        <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                             <h4 class="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">Cell Wall Anatomy</h4>
+                             <div class="space-y-3">
+                                 <div class="flex items-center space-x-3">
+                                     <div class="w-4 h-4 rounded bg-purple-600"></div>
+                                     <div class="text-[10px]">
+                                         <p class="font-bold text-slate-200">Gram-Positive</p>
+                                         <p class="text-slate-500">Thick Peptidoglycan (90%)</p>
+                                     </div>
+                                 </div>
+                                 <div class="flex items-center space-x-3">
+                                     <div class="w-4 h-4 rounded bg-rose-500"></div>
+                                     <div class="text-[10px]">
+                                         <p class="font-bold text-slate-200">Gram-Negative</p>
+                                         <p class="text-slate-500">Thin PG + LPS Outer Membrane</p>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+
+                        <button onclick="resetLab()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 rounded-lg transition border border-slate-700">Reset Slide</button>
+                    </div>
+
+                    <!-- Visualizer Column -->
+                    <div class="lg:w-2/3 space-y-4">
+                        <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border-4 border-slate-800 shadow-2xl flex items-center justify-center" id="lab-visualizer">
+                            <!-- Overlay effects -->
+                            <div id="heat-blur" class="absolute inset-0 bg-orange-500/10 opacity-0 transition-opacity duration-500 flex items-center justify-center z-20">
+                                <i class="fas fa-fire text-orange-500 text-5xl animate-pulse"></i>
+                            </div>
+                            <div id="microscope-lens" class="absolute inset-0 pointer-events-none border-[60px] md:border-[120px] border-black rounded-full transition-transform duration-700 scale-150 z-10"></div>
+                            
+                            <!-- Slide Content -->
+                            <div id="slide-stage" class="transition-all duration-1000 scale-75 opacity-50 flex flex-wrap justify-center items-center w-full max-w-sm gap-2">
+                                <div id="lab-bacteria" class="flex flex-wrap gap-4 justify-center items-center">
+                                    <!-- Dynamic bacteria cells -->
+                                </div>
+                            </div>
+
+                            <div id="lab-status-overlay" class="absolute top-4 right-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-[10px] font-mono text-emerald-400 border border-emerald-500/30 z-30">
+                                MAGNIFICATION: <span id="lab-mag">10X</span>
+                            </div>
+                        </div>
+
+                        <div id="lab-feedback" class="p-6 glass-panel rounded-2xl border-l-4 border-emerald-500">
+                            <h4 class="text-emerald-400 font-bold mb-1 text-sm">Lab Journal</h4>
+                            <p id="lab-journal-text" class="text-xs text-slate-300 italic">Initiate aseptic transfer by fixing the smear to the slide.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: STUDY ASSISTANT -->
+        <section id="section-assistant" class="hidden h-[600px] flex flex-col">
+            <div class="glass-panel flex-grow rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-700">
+                <div class="bg-slate-800/80 p-4 flex items-center justify-between border-b border-slate-700">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                        <span class="font-semibold text-sm">Microbiology Specialist v2</span>
+                    </div>
+                </div>
+                
+                <div id="chat-messages" class="flex-grow overflow-y-auto p-6 space-y-4 bg-slate-900/30">
+                    <div class="flex justify-start">
+                        <div class="chat-bubble bg-slate-800 p-4 rounded-2xl rounded-tl-none border border-slate-700 text-sm leading-relaxed">
+                            Hello! I'm your interactive tutor. I can explain the mechanisms behind **Gram-staining**, **endospore resistance**, or **microbial genetics**. What's on your mind?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-slate-900/80 border-t border-slate-700">
+                    <form id="chat-form" class="flex space-x-2">
+                        <input type="text" id="user-input" placeholder="Ask about horizontal gene transfer..." 
+                            class="flex-grow bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                        <button type="submit" id="send-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl transition flex items-center shadow-lg active:scale-95">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="p-6 text-center text-slate-500 text-[10px] uppercase tracking-widest border-t border-slate-800">
+        &copy; 2026 MicrobeHub Academic | Identifying Gram +/- Microorganisms
+    </footer>
+
+    <!-- Result Modal (Diagnostic Report) -->
+    <div id="lab-result-modal" class="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-emerald-500/30 relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-white transition text-xl">&times;</button>
+            <h2 class="text-2xl font-bold text-white mb-2">Final Laboratory Report</h2>
+            <p class="text-slate-400 text-xs mb-6">Differential Staining & Identification Analysis</p>
+            
+            <div id="modal-content" class="space-y-6">
+                <!-- Result data injected here -->
+            </div>
+            
+            <div class="mt-8 flex gap-4">
+                <button onclick="closeModal()" class="flex-grow py-3 bg-slate-700 rounded-xl font-bold hover:bg-slate-600 transition text-sm">Return to Bench</button>
+                <button onclick="resetLab(); closeModal();" class="flex-grow py-3 bg-emerald-600 rounded-xl font-bold hover:bg-emerald-500 transition text-sm">Prepare New Slide</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA DEFS ---
+        const microbeData = {
+            bacillus: {
+                title: "Bacillus anthracis",
+                class: "Firmicutes",
+                genera: ["Bacillus", "Clostridium", "Listeria"],
+                desc: "Rod-shaped, Gram-positive, endospore-forming bacteria. Features a thick peptidoglycan layer that effectively traps Crystal Violet-Iodine complexes."
+            },
+            coccus: {
+                title: "Staphylococcus aureus",
+                class: "Bacilli / Staphylococcaceae",
+                genera: ["Staphylococcus", "Streptococcus", "Neisseria"],
+                desc: "Spherical bacteria. Gram-positive species like S. aureus retain purple dye, whereas Gram-negative cocci like Neisseria do not."
+            },
+            spirillum: {
+                title: "Spirillum volutans",
+                class: "Betaproteobacteria",
+                genera: ["Spirillum", "Campylobacter", "Helicobacter"],
+                desc: "Spiral-shaped. Generally Gram-negative. Their complex outer membrane (LPS) is sensitive to alcohol decolorization."
+            },
+            virus: {
+                title: "Bacteriophage T4",
+                class: "Caudoviricetes",
+                genera: ["T4", "Lambda", "Mu"],
+                desc: "Viruses do not have a peptidoglycan cell wall and cannot be identified using Gram staining."
+            }
+        };
+
+        // --- TABS ---
+        function switchTab(tabId) {
+            ['explorer', 'classification', 'lab', 'assistant'].forEach(s => {
+                const el = document.getElementById(`section-${s}`);
+                const tab = document.getElementById(`tab-${s}`);
+                if (el) el.classList.add('hidden');
+                if (tab) tab.classList.remove('active');
+            });
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            if (tabId === 'explorer') onWindowResize();
+        }
+
+        // --- 3D ENGINE ---
+        let scene, camera, renderer, currentMicrobe;
+        let isMouseDown = false;
+
+        function init3D() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            if (!wrapper || typeof THREE === 'undefined') return;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, wrapper.clientWidth / wrapper.clientHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
+            wrapper.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            camera.position.z = 5;
+            loadModel('bacillus');
+            document.getElementById('canvas-loading').style.display = 'none';
+            
+            animate();
+
+            wrapper.addEventListener('mousedown', () => isMouseDown = true);
+            window.addEventListener('mouseup', () => isMouseDown = false);
+            wrapper.addEventListener('mousemove', (e) => {
+                if (isMouseDown && currentMicrobe) {
+                    currentMicrobe.rotation.y += e.movementX * 0.01;
+                    currentMicrobe.rotation.x += e.movementY * 0.01;
+                }
+            });
+            wrapper.addEventListener('wheel', (e) => {
+                camera.position.z = Math.max(2, Math.min(10, camera.position.z + e.deltaY * 0.005));
+            });
+        }
+
+        function loadModel(type) {
+            if (!scene) return;
+            if (currentMicrobe) scene.remove(currentMicrobe);
+            
+            const group = new THREE.Group();
+            const material = new THREE.MeshPhongMaterial({ 
+                color: type === 'virus' ? 0x3b82f6 : 0x10b981, 
+                shininess: 80, 
+                transparent: true,
+                opacity: 0.95
+            });
+
+            const data = microbeData[type];
+
+            if (type === 'bacillus') {
+                group.add(new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 2.2, 16, 32), material));
+            } else if (type === 'coccus') {
+                group.add(new THREE.Mesh(new THREE.SphereGeometry(1.3, 32, 32), material));
+            } else if (type === 'spirillum') {
+                const curve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(0, -2, 0), new THREE.Vector3(1, -1, 1),
+                    new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 1, 1),
+                    new THREE.Vector3(0, 2, 0),
+                ]);
+                group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 100, 0.4, 20, false), material));
+            } else if (type === 'virus') {
+                const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9), material);
+                head.position.y = 1.6;
+                group.add(head);
+                const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.8), material);
+                tail.position.y = 0.4;
+                group.add(tail);
+                for(let i=0; i<6; i++) {
+                    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5), material);
+                    leg.position.y = -0.5;
+                    leg.rotation.z = Math.PI/3;
+                    leg.rotation.y = (Math.PI*2/6)*i;
+                    group.add(leg);
+                }
+            }
+
+            currentMicrobe = group;
+            scene.add(currentMicrobe);
+
+            document.getElementById('entity-title').innerText = data.title;
+            document.getElementById('entity-class').innerText = data.class;
+            document.getElementById('entity-desc').innerHTML = data.desc;
+            
+            const generaBox = document.getElementById('entity-genera');
+            generaBox.innerHTML = '';
+            data.genera.forEach(g => {
+                const span = document.createElement('span');
+                span.className = "text-[10px] bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-slate-400 italic";
+                span.innerText = g;
+                generaBox.appendChild(span);
+            });
+        }
+
+        function animate() {
+            if (!renderer) return;
+            requestAnimationFrame(animate);
+            if (currentMicrobe && !isMouseDown) currentMicrobe.rotation.y += 0.005;
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            if (!wrapper || !renderer) return;
+            camera.aspect = wrapper.clientWidth / wrapper.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
+        }
+
+        // --- ENHANCED VIRTUAL LAB ---
+        let labState = { smear: false, cv: false, iodine: false, alcohol: false, safranin: false };
+
+        function initLabBacteria() {
+            const container = document.getElementById('lab-bacteria');
+            container.innerHTML = '';
+            // Generate a mix of Gram Positive (Rods) and Gram Negative (Spheres)
+            for(let i=0; i<15; i++) {
+                const type = i % 2 === 0 ? 'gram-pos' : 'gram-neg';
+                const cell = document.createElement('div');
+                cell.className = `lab-cell ${type === 'gram-pos' ? 'w-8 h-3 rounded-full' : 'w-3 h-3 rounded-full'} bg-slate-700 transition-all duration-700 opacity-20 shadow-sm border border-white/5`;
+                cell.setAttribute('data-type', type);
+                container.appendChild(cell);
+            }
+        }
+
+        function labAction(action) {
+            const journal = document.getElementById('lab-journal-text');
+            const stepNum = document.getElementById('lab-step-num');
+            
+            if (action === 'smear' && !labState.smear) {
+                document.getElementById('heat-blur').style.opacity = '1';
+                setTimeout(() => {
+                    document.getElementById('heat-blur').style.opacity = '0';
+                    document.getElementById('slide-stage').style.opacity = '1';
+                    document.getElementById('slide-stage').style.transform = 'scale(1)';
+                    document.querySelectorAll('.lab-cell').forEach(c => c.style.opacity = '0.5');
+                    labState.smear = true;
+                    stepNum.innerText = "1";
+                    updateLabUI();
+                    journal.innerText = "Smear heat-fixed. Cells are now adhered to the slide.";
+                }, 1000);
+            } else if (action === 'cv' && labState.smear && !labState.cv) {
+                document.querySelectorAll('.lab-cell').forEach(c => c.style.backgroundColor = '#6d28d9');
+                labState.cv = true;
+                stepNum.innerText = "2";
+                updateLabUI();
+                journal.innerText = "Crystal Violet applied. All cells have been primary-stained purple.";
+            } else if (action === 'iodine' && labState.cv && !labState.iodine) {
+                document.querySelectorAll('.lab-cell').forEach(c => {
+                    c.style.backgroundColor = '#4c1d95';
+                    c.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
+                });
+                labState.iodine = true;
+                stepNum.innerText = "3";
+                updateLabUI();
+                journal.innerText = "Iodine added as mordant. CV-I complexes are forming in the peptidoglycan.";
+            } else if (action === 'alcohol' && labState.iodine && !labState.alcohol) {
+                document.querySelectorAll('.lab-cell').forEach(c => {
+                    if (c.getAttribute('data-type') === 'gram-neg') {
+                        c.style.backgroundColor = '#334155';
+                        c.style.boxShadow = 'none';
+                    }
+                });
+                labState.alcohol = true;
+                stepNum.innerText = "4";
+                updateLabUI();
+                journal.innerText = "Decolorization. Gram-negatives lose the dye complex through their thin cell walls.";
+            } else if (action === 'safranin' && labState.alcohol && !labState.safranin) {
+                document.querySelectorAll('.lab-cell').forEach(c => {
+                    if (c.getAttribute('data-type') === 'gram-neg') {
+                        c.style.backgroundColor = '#e11d48';
+                    }
+                });
+                labState.safranin = true;
+                stepNum.innerText = "5";
+                updateLabUI();
+                journal.innerText = "Counterstain complete. Gram-negative organisms are now visible as pink/red.";
+            } else if (action === 'examine' && labState.safranin) {
+                // Zoom in effect
+                document.getElementById('slide-stage').style.transform = 'scale(2)';
+                document.getElementById('microscope-lens').style.transform = 'scale(1)';
+                document.getElementById('lab-mag').innerText = '100X (Oil)';
+                setTimeout(showLabResult, 800);
+            }
+        }
+
+        function updateLabUI() {
+            document.getElementById('icon-smear').className = `fas fa-circle-check ${labState.smear ? 'text-emerald-500' : 'text-slate-600'}`;
+            if (labState.smear) document.getElementById('btn-smear').classList.remove('active-step');
+            
+            const toggle = (id, condition, active) => {
+                const btn = document.getElementById(id);
+                if (condition) {
+                    btn.classList.remove('disabled');
+                    if (active) btn.classList.add('active-step');
+                    else btn.classList.remove('active-step');
+                } else {
+                    btn.classList.add('disabled');
+                }
+            };
+
+            toggle('btn-cv', labState.smear, !labState.cv);
+            toggle('btn-iodine', labState.cv, !labState.iodine);
+            toggle('btn-alcohol', labState.iodine, !labState.alcohol);
+            toggle('btn-safranin', labState.alcohol, !labState.safranin);
+            toggle('btn-examine', labState.safranin, true);
+        }
+
+        function showLabResult() {
+            const modal = document.getElementById('lab-result-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('opacity-100'), 10);
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 bg-purple-500/10 border border-purple-500/30 rounded-2xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-4 h-4 rounded-full bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]"></div>
+                            <h5 class="text-purple-400 font-bold text-sm uppercase">Gram-Positive (Purple)</h5>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed mb-4">
+                            <strong>Mechanism:</strong> The thick, highly cross-linked <strong>Peptidoglycan</strong> layer (90% of cell wall) shrinks when treated with alcohol, trapping the large <strong>Crystal Violet-Iodine (CV-I)</strong> complexes inside.
+                        </p>
+                        <div class="bg-black/30 p-2 rounded text-[10px] text-slate-400 italic">
+                            Identified: Bacillus subtilis (Rods)
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-4 h-4 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"></div>
+                            <h5 class="text-rose-400 font-bold text-sm uppercase">Gram-Negative (Pink)</h5>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed mb-4">
+                            <strong>Mechanism:</strong> Alcohol dissolves the <strong>Outer Lipopolysaccharide (LPS)</strong> membrane and increases cell wall permeability. The CV-I complex easily washes out of the thin PG layer, allowing the <strong>Safranin</strong> counterstain to take hold.
+                        </p>
+                        <div class="bg-black/30 p-2 rounded text-[10px] text-slate-400 italic">
+                            Identified: Neisseria sicca (Spheres)
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+                    <h6 class="text-xs font-bold text-white mb-2 uppercase flex items-center">
+                        <i class="fas fa-microscope text-emerald-500 mr-2"></i> Clinical Significance
+                    </h6>
+                    <p class="text-[11px] text-slate-400">
+                        This differentiation is the first step in bacterial identification. Gram-negative bacteria are often more resistant to antibiotics due to their protective outer membrane, while Gram-positive bacteria are generally more susceptible to penicillins which target peptidoglycan synthesis.
+                    </p>
+                </div>
+            `;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('lab-result-modal');
+            modal.classList.remove('opacity-100');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            
+            // Zoom back out
+            document.getElementById('slide-stage').style.transform = 'scale(0.75)';
+            document.getElementById('microscope-lens').style.transform = 'scale(1.5)';
+            document.getElementById('lab-mag').innerText = '10X';
+        }
+
+        function resetLab() {
+            labState = { smear: false, cv: false, iodine: false, alcohol: false, safranin: false };
+            document.getElementById('slide-stage').style.opacity = '0';
+            document.getElementById('btn-smear').classList.add('active-step');
+            document.getElementById('lab-journal-text').innerText = 'Initiate aseptic transfer by fixing the smear to the slide.';
+            document.getElementById('lab-step-num').innerText = "0";
+            initLabBacteria();
+            updateLabUI();
+        }
+
+        // --- GEMINI STUDY AI ---
+        const apiKey = ""; 
+        const chatForm = document.getElementById('chat-form');
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const q = userInput.value.trim();
+                if (!q) return;
+                addMsg(q, 'user');
+                userInput.value = '';
+                const id = addMsg('Analyzing lab data...', 'ai');
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: q }] }],
+                            systemInstruction: { parts: [{ text: "You are a PhD Microbiology TA. Explain undergrad concepts with clarity. Focus on cell wall biochemistry when asked about Gram-staining." }] }
+                        })
+                    });
+                    const data = await res.json();
+                    updateMsg(id, data.candidates[0].content.parts[0].text);
+                } catch {
+                    updateMsg(id, "The lab AI is currently busy with sample analysis. Please try again shortly.");
+                }
+            });
+        }
+
+        function addMsg(text, sender) {
+            const id = 'm-' + Math.random().toString(36).substr(2,9);
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `<div id="${id}" class="chat-bubble p-4 rounded-2xl border text-sm ${sender === 'user' ? 'bg-emerald-600 border-emerald-500 rounded-tr-none' : 'bg-slate-800 border-slate-700 rounded-tl-none'}">${text}</div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return id;
+        }
+
+        function updateMsg(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            const checker = setInterval(() => {
+                if (typeof THREE !== 'undefined') {
+                    init3D();
+                    initLabBacteria();
+                    clearInterval(checker);
+                }
+            }, 100);
+        };
+        window.addEventListener('resize', onWindowResize);
+    </script>
+</body>
+</html>

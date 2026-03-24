@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Ecology: Comprehensive Study Guide</title>
+    
+    <!-- Chosen Palette: Earthy Neutrals (Stone, Emerald, Amber, Sky) -->
+    <!-- Application Structure Plan: The application utilizes a Single Page Application (SPA) architecture with a sidebar navigation menu. This chunks the massive subject of General Ecology into logical, hierarchical modules (Introduction -> Population -> Community -> Ecosystem -> Biomes -> Quiz). This structure prevents cognitive overload and mirrors the biological hierarchy, allowing users to build knowledge sequentially before testing it in the comprehensive knowledge check. Interactive elements are embedded within each module to encourage active learning. -->
+    <!-- Visualization & Content Choices: 
+         1. Population Growth -> Compare Exponential vs Logistic -> Line Chart (Chart.js) -> Toggle datasets to see limits. Justification: Standard ecological modeling visualization.
+         2. Survivorship -> Compare life strategies -> Logarithmic Line Chart (Chart.js) -> Justification: Shows population decay over lifespan clearly.
+         3. Species Interactions -> Active Recall -> CSS Flip Cards -> Justification: Great for memorizing symbols (+/-) and examples.
+         4. Energy Flow -> Conceptualize 10% rule -> CSS Pyramid -> Justification: Visualizes trophic hierarchy without SVGs.
+         5. Biomes -> Climate relationships -> Scatter Plot (Chart.js) -> Justification: Standard Whittaker biome classification method.
+         6. Aquatic Zones -> Spatial relationships -> CSS Block Diagram -> Justification: Shows depth and light penetration purely with HTML/CSS.
+         Library/Method: Chart.js for all data graphing, vanilla JS/Tailwind for interactions and DOM manipulation. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Core Typography and Backgrounds */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #fafaf9; /* stone-50 */
+            color: #292524; /* stone-800 */
+        }
+        
+        /* REQUIRED Chart Container Constraints */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tab Logic */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* CSS Flip Cards (No SVG) */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .flip-card-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .flip-card:hover .flip-card-inner, .flip-card:focus-within .flip-card-inner { transform: rotateY(180deg); }
+
+        /* Pyramid Interactive Elements */
+        .pyramid-level {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .pyramid-level:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Interactive Tabs */
+        .cycle-btn.active {
+            background-color: #059669; /* emerald-600 */
+            color: white;
+            border-color: #059669 !important;
+        }
+
+        /* Aquatic Zonation Diagram (No SVG) */
+        .aquatic-zone {
+            transition: background-color 0.3s ease;
+        }
+        .aquatic-zone:hover {
+            filter: brightness(1.15);
+        }
+        
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+        
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #059669;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d6d3d1;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Navigation Sidebar -->
+    <nav class="bg-stone-900 text-stone-100 w-full md:w-72 flex-shrink-0 flex flex-col h-auto md:h-screen sticky top-0 md:relative z-30 shadow-xl">
+        <div class="p-6 border-b border-stone-800 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black text-emerald-400 tracking-tight">EcoMastery</h1>
+                <p class="text-xs text-stone-400 mt-1 uppercase tracking-widest font-semibold">Study Guide</p>
+            </div>
+            <!-- Mobile Toggle -->
+            <button id="mobile-menu-btn" class="md:hidden text-stone-300 hover:text-white focus:outline-none text-2xl">
+                &#9776;
+            </button>
+        </div>
+
+        <div id="nav-menu" class="hidden md:flex flex-col flex-grow overflow-y-auto p-4 space-y-2">
+            <button data-target="module-intro" class="nav-btn w-full text-left px-4 py-3 rounded-lg bg-emerald-700 text-white font-medium transition-all shadow-sm">1. Introduction to Ecology</button>
+            <button data-target="module-population" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-stone-300 hover:bg-stone-800 hover:text-white transition-all">2. Population Dynamics</button>
+            <button data-target="module-community" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-stone-300 hover:bg-stone-800 hover:text-white transition-all">3. Community Interactions</button>
+            <button data-target="module-ecosystem" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-stone-300 hover:bg-stone-800 hover:text-white transition-all">4. Ecosystems & Energy</button>
+            <button data-target="module-biomes" class="nav-btn w-full text-left px-4 py-3 rounded-lg text-stone-300 hover:bg-stone-800 hover:text-white transition-all">5. Global Biomes</button>
+            
+            <div class="mt-auto pt-6">
+                <button data-target="module-quiz" class="nav-btn w-full text-left px-4 py-4 rounded-lg border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-900 hover:text-white transition-all font-bold flex justify-between items-center">
+                    Knowledge Check <span>&#10140;</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow p-4 md:p-8 overflow-y-auto h-screen scroll-smooth">
+        
+        <!-- Module 1: Introduction -->
+        <section id="module-intro" class="tab-content active fade-in max-w-6xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Introduction to Ecology</h2>
+                <p class="text-xl text-stone-600 font-light">The scientific study of interactions between organisms and their environment.</p>
+            </header>
+
+            <div class="bg-white rounded-2xl shadow-sm p-8 mb-8 border border-stone-100">
+                <p class="text-stone-700 leading-relaxed text-lg mb-6">
+                    Ecology integrates biology, geography, and earth sciences. It is essential for understanding the distribution, abundance, and evolution of life on Earth, as well as managing conservation efforts and predicting the impacts of climate change.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 hover:border-emerald-300 transition-colors">
+                        <span class="text-4xl mb-3 block">&#128300;</span>
+                        <h4 class="font-bold text-stone-800 text-lg">Autecology</h4>
+                        <p class="text-sm text-stone-600 mt-2">The study of individual organisms or single species in relation to their environment. Focuses heavily on physiology, behavior, and evolutionary adaptations to specific conditions.</p>
+                    </div>
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 hover:border-emerald-300 transition-colors">
+                        <span class="text-4xl mb-3 block">&#127758;</span>
+                        <h4 class="font-bold text-stone-800 text-lg">Synecology</h4>
+                        <p class="text-sm text-stone-600 mt-2">The study of groups of organisms of different species (communities) associated together as a unit. Focuses on food webs, energy flow, and complex interspecific interactions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Levels of Org -->
+                <div class="bg-emerald-50 rounded-2xl p-8 border border-emerald-100">
+                    <h3 class="text-2xl font-bold text-emerald-900 mb-6 flex items-center"><span class="mr-2">&#128200;</span> Hierarchy of Life</h3>
+                    <div class="flex flex-col space-y-3">
+                        <div class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition">
+                            <span class="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center font-bold mr-4 shrink-0 text-lg">1</span>
+                            <div>
+                                <strong class="text-stone-800">Organism</strong>
+                                <p class="text-xs text-stone-500 mt-1">Physiology, behavior. The fundamental unit of natural selection.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition ml-4">
+                            <span class="w-10 h-10 rounded-full bg-emerald-300 text-emerald-900 flex items-center justify-center font-bold mr-4 shrink-0 text-lg">2</span>
+                            <div>
+                                <strong class="text-stone-800">Population</strong>
+                                <p class="text-xs text-stone-500 mt-1">Group of same species in an area. The unit of evolution.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition ml-8">
+                            <span class="w-10 h-10 rounded-full bg-emerald-400 text-white flex items-center justify-center font-bold mr-4 shrink-0 text-lg">3</span>
+                            <div>
+                                <strong class="text-stone-800">Community</strong>
+                                <p class="text-xs text-stone-500 mt-1">All interacting populations in an area.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition ml-12">
+                            <span class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold mr-4 shrink-0 text-lg">4</span>
+                            <div>
+                                <strong class="text-stone-800">Ecosystem</strong>
+                                <p class="text-xs text-stone-500 mt-1">Community + abiotic (non-living) environment.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition ml-16">
+                            <span class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold mr-4 shrink-0 text-lg">5</span>
+                            <div>
+                                <strong class="text-stone-800">Biosphere</strong>
+                                <p class="text-xs text-stone-500 mt-1">Sum of all Earth's ecosystems.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Abiotic vs Biotic -->
+                <div class="bg-sky-50 rounded-2xl p-8 border border-sky-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-sky-900 mb-6 flex items-center"><span class="mr-2">&#9874;&#65039;</span> Environmental Factors</h3>
+                    
+                    <div class="space-y-6 flex-grow">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-sky-400">
+                            <h4 class="font-bold text-stone-800 text-lg">Abiotic (Non-living)</h4>
+                            <p class="text-sm text-stone-600 mt-1 mb-3">Determine physiological limits. Governed by <em>Liebig's Law of the Minimum</em> (growth is dictated by the scarcest resource).</p>
+                            <ul class="text-sm text-stone-600 grid grid-cols-2 gap-2">
+                                <li class="flex items-center"><span class="text-sky-500 mr-2">&#8451;</span> Temperature</li>
+                                <li class="flex items-center"><span class="text-sky-500 mr-2">&#128167;</span> Water / Salinity</li>
+                                <li class="flex items-center"><span class="text-sky-500 mr-2">&#9728;&#65039;</span> Sunlight</li>
+                                <li class="flex items-center"><span class="text-sky-500 mr-2">&#127811;</span> Soil Nutrients</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-400">
+                            <h4 class="font-bold text-stone-800 text-lg">Biotic (Living)</h4>
+                            <p class="text-sm text-stone-600 mt-1 mb-3">Interactions with other organisms. These dictate evolutionary pressures like mimicry and defense mechanisms.</p>
+                            <ul class="text-sm text-stone-600 grid grid-cols-2 gap-2">
+                                <li class="flex items-center"><span class="text-emerald-500 mr-2">&#129420;</span> Predators</li>
+                                <li class="flex items-center"><span class="text-emerald-500 mr-2">&#129440;</span> Pathogens</li>
+                                <li class="flex items-center"><span class="text-emerald-500 mr-2">&#9876;&#65039;</span> Competitors</li>
+                                <li class="flex items-center"><span class="text-emerald-500 mr-2">&#128029;</span> Pollinators</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 2: Population Ecology -->
+        <section id="module-population" class="tab-content max-w-6xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Population Dynamics</h2>
+                <p class="text-xl text-stone-600 font-light">Demographics, dispersion, growth models, and life history strategies.</p>
+            </header>
+
+            <!-- Dispersion Patterns -->
+            <div class="bg-white rounded-2xl shadow-sm p-8 mb-8 border border-stone-100">
+                <h3 class="text-2xl font-bold text-emerald-800 mb-2">Population Dispersion</h3>
+                <p class="text-stone-600 mb-8">Dispersion describes the spatial relationship between individuals within a population's boundaries.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="flex flex-col items-center bg-stone-50 p-6 rounded-xl border border-stone-200 hover:shadow-md transition">
+                        <div class="w-32 h-32 border border-stone-300 rounded-lg relative mb-4 bg-white shadow-inner">
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full top-3 left-3 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full top-5 left-6 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full top-6 left-2 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full bottom-4 right-5 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full bottom-3 right-3 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-emerald-600 rounded-full bottom-6 right-7 shadow-sm"></div>
+                        </div>
+                        <h4 class="font-bold text-stone-800 text-lg">Clumped</h4>
+                        <p class="text-sm text-stone-500 mt-2 text-center">Individuals aggregate in patches. Most common pattern. Driven by uneven resource distribution or social behavior (e.g., herds, schools of fish).</p>
+                    </div>
+                    <div class="flex flex-col items-center bg-stone-50 p-6 rounded-xl border border-stone-200 hover:shadow-md transition">
+                        <div class="w-32 h-32 border border-stone-300 rounded-lg relative mb-4 bg-white shadow-inner grid grid-cols-3 gap-2 p-3">
+                            <div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div>
+                            <div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div>
+                            <div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div><div class="w-3 h-3 bg-amber-500 rounded-full mx-auto shadow-sm"></div>
+                        </div>
+                        <h4 class="font-bold text-stone-800 text-lg">Uniform</h4>
+                        <p class="text-sm text-stone-500 mt-2 text-center">Evenly spaced. Driven by antagonistic interactions like territoriality in animals or chemical inhibition (allelopathy) in plants.</p>
+                    </div>
+                    <div class="flex flex-col items-center bg-stone-50 p-6 rounded-xl border border-stone-200 hover:shadow-md transition">
+                        <div class="w-32 h-32 border border-stone-300 rounded-lg relative mb-4 bg-white shadow-inner">
+                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full top-3 left-10 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full top-12 left-3 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full top-8 right-8 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full bottom-4 left-8 shadow-sm"></div>
+                            <div class="absolute w-3 h-3 bg-blue-500 rounded-full bottom-10 right-4 shadow-sm"></div>
+                        </div>
+                        <h4 class="font-bold text-stone-800 text-lg">Random</h4>
+                        <p class="text-sm text-stone-500 mt-2 text-center">Position is independent of others. Occurs when resources are constant across the area and biological interactions are weak (e.g., windblown seeds).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                
+                <!-- Growth Models Chart -->
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-2">Growth Models</h3>
+                    <p class="text-sm text-stone-600 mb-6 flex-grow">
+                        Compare idealized unlimited growth (J-curve) with realistic growth constrained by environmental limits (S-curve).
+                    </p>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="bg-stone-100 px-3 py-1 rounded text-sm font-mono text-stone-700">K = Carrying Capacity</div>
+                        <button id="toggle-carrying-capacity" class="text-sm px-4 py-2 bg-stone-200 text-stone-800 font-semibold rounded-lg hover:bg-stone-300 transition shadow-sm">Toggle 'K' Limit</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="populationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Survivorship Curves Chart -->
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-2">Survivorship Curves</h3>
+                    <p class="text-sm text-stone-600 mb-6 flex-grow">
+                        A plot of the number of individuals alive at each age. Note the logarithmic Y-axis.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="survivorshipChart"></canvas>
+                    </div>
+                    <div class="mt-6 grid grid-cols-3 gap-2 text-xs text-stone-700 bg-stone-50 p-4 rounded-xl border border-stone-200">
+                        <div><strong class="text-red-500 block text-sm">Type I</strong> Low early death, late decline (Humans).</div>
+                        <div><strong class="text-blue-500 block text-sm">Type II</strong> Constant mortality rate (Birds).</div>
+                        <div><strong class="text-green-500 block text-sm">Type III</strong> Massive early death, high survival later (Fish).</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Life History Strategies -->
+            <div class="bg-stone-800 text-stone-100 rounded-2xl p-8 shadow-lg mb-8">
+                <h3 class="text-2xl font-bold text-amber-400 mb-6 flex items-center"><span class="mr-3 text-3xl">&#9878;&#65039;</span> Life History Strategies (r vs K Selection)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div class="bg-stone-900/50 p-6 rounded-xl border border-stone-700 hover:border-emerald-500 transition">
+                        <h4 class="font-bold text-emerald-400 text-xl border-b-2 border-stone-700 pb-3 mb-4">r-Selected Species</h4>
+                        <ul class="space-y-2 text-stone-300 text-base">
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 font-bold">&rarr;</span> Maximize reproductive rate (<var>r</var>).</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 font-bold">&rarr;</span> Many small offspring, early maturation.</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 font-bold">&rarr;</span> Little to no parental care.</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 font-bold">&rarr;</span> Type III survivorship curve.</li>
+                            <li class="flex items-start"><span class="text-emerald-500 mr-2 font-bold">&rarr;</span> <em>Environment:</em> Unstable, density-independent.</li>
+                            <li class="mt-3 text-stone-400 italic">Examples: Weeds, insects, bacteria.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-stone-900/50 p-6 rounded-xl border border-stone-700 hover:border-amber-500 transition">
+                        <h4 class="font-bold text-amber-400 text-xl border-b-2 border-stone-700 pb-3 mb-4">K-Selected Species</h4>
+                        <ul class="space-y-2 text-stone-300 text-base">
+                            <li class="flex items-start"><span class="text-amber-500 mr-2 font-bold">&rarr;</span> Hover near carrying capacity (<var>K</var>).</li>
+                            <li class="flex items-start"><span class="text-amber-500 mr-2 font-bold">&rarr;</span> Few, large offspring, late maturation.</li>
+                            <li class="flex items-start"><span class="text-amber-500 mr-2 font-bold">&rarr;</span> High degree of parental care.</li>
+                            <li class="flex items-start"><span class="text-amber-500 mr-2 font-bold">&rarr;</span> Type I survivorship curve.</li>
+                            <li class="flex items-start"><span class="text-amber-500 mr-2 font-bold">&rarr;</span> <em>Environment:</em> Stable, density-dependent.</li>
+                            <li class="mt-3 text-stone-400 italic">Examples: Elephants, humans, oak trees.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transition: Biodiversity Indices -->
+            <div class="bg-white rounded-2xl shadow-md p-8 border-2 border-emerald-100">
+                <header class="mb-6 border-b border-stone-200 pb-4">
+                    <h3 class="text-3xl font-bold text-emerald-900 mb-2">From Populations to Communities: Biodiversity</h3>
+                    <p class="text-stone-600 text-base">When multiple populations occupy the same habitat, we measure their combined biodiversity using mathematical indices.</p>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Concept Explanation -->
+                    <div class="lg:col-span-5 space-y-5">
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                            <h4 class="font-bold text-stone-800 text-lg mb-1">Two Components of Diversity</h4>
+                            <ul class="text-sm text-stone-600 space-y-2 mt-2">
+                                <li><strong class="text-emerald-700">Species Richness (S):</strong> The total number of different species present.</li>
+                                <li><strong class="text-emerald-700">Species Evenness:</strong> The relative abundance of each species. A community is more diverse if populations are evenly distributed rather than dominated by one species.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 text-sm text-stone-700 font-mono">
+                            <h4 class="font-bold text-stone-800 font-sans text-lg mb-2">Key Indices</h4>
+                            <p class="mb-2"><strong class="text-blue-600">Shannon Index (H'):</strong> <br> H' = - &Sigma; (p<sub>i</sub> &times; ln(p<sub>i</sub>))</p>
+                            <p class="text-xs text-stone-500 font-sans mb-3">Accounts for both richness and evenness. Higher value = higher diversity (typically 1.5 to 3.5).</p>
+                            
+                            <p class="mb-2"><strong class="text-purple-600">Simpson's Index of Diversity (1-D):</strong> <br> 1 - D = 1 - &Sigma; (p<sub>i</sub><sup>2</sup>)</p>
+                            <p class="text-xs text-stone-500 font-sans">Probability that two randomly selected individuals belong to different species. Ranges from 0 (no diversity) to 1 (infinite diversity).</p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Calculator -->
+                    <div class="lg:col-span-7 bg-stone-900 rounded-xl p-6 text-stone-200 flex flex-col md:flex-row gap-6 items-center shadow-inner">
+                        <!-- Sliders -->
+                        <div class="w-full md:w-1/2 space-y-4">
+                            <h4 class="font-bold text-emerald-400 mb-4 border-b border-stone-700 pb-2">Adjust Population Sizes</h4>
+                            
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold"><span class="text-emerald-400">Species A</span> <span id="val-spA">50</span></div>
+                                <input type="range" id="slider-spA" min="0" max="100" value="50" class="w-full">
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold"><span class="text-blue-400">Species B</span> <span id="val-spB">50</span></div>
+                                <input type="range" id="slider-spB" min="0" max="100" value="50" class="w-full">
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold"><span class="text-amber-400">Species C</span> <span id="val-spC">50</span></div>
+                                <input type="range" id="slider-spC" min="0" max="100" value="50" class="w-full">
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-xs font-bold"><span class="text-purple-400">Species D</span> <span id="val-spD">50</span></div>
+                                <input type="range" id="slider-spD" min="0" max="100" value="50" class="w-full">
+                            </div>
+                            <button id="preset-uneven" class="mt-4 w-full bg-stone-700 hover:bg-stone-600 text-xs font-bold py-2 rounded transition">Simulate Low Evenness</button>
+                        </div>
+                        
+                        <!-- Visualization & Output -->
+                        <div class="w-full md:w-1/2 flex flex-col items-center">
+                            <div class="w-48 h-48 relative mb-4">
+                                <canvas id="biodiversityChart"></canvas>
+                            </div>
+                            
+                            <div class="w-full grid grid-cols-2 gap-2 text-center">
+                                <div class="bg-stone-800 p-2 rounded border border-stone-700">
+                                    <div class="text-[10px] text-stone-400 uppercase tracking-widest">Richness (S)</div>
+                                    <div class="text-xl font-black text-white" id="out-richness">4</div>
+                                </div>
+                                <div class="bg-stone-800 p-2 rounded border border-stone-700">
+                                    <div class="text-[10px] text-stone-400 uppercase tracking-widest">Total Indiv. (N)</div>
+                                    <div class="text-xl font-black text-white" id="out-total">200</div>
+                                </div>
+                                <div class="bg-stone-800 p-2 rounded border border-stone-700">
+                                    <div class="text-[10px] text-stone-400 uppercase tracking-widest">Shannon (H')</div>
+                                    <div class="text-xl font-black text-emerald-400" id="out-shannon">1.39</div>
+                                </div>
+                                <div class="bg-stone-800 p-2 rounded border border-stone-700">
+                                    <div class="text-[10px] text-stone-400 uppercase tracking-widest">Simpson (1-D)</div>
+                                    <div class="text-xl font-black text-blue-400" id="out-simpson">0.75</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 3: Community Interactions -->
+        <section id="module-community" class="tab-content max-w-6xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Community Ecology</h2>
+                <p class="text-xl text-stone-600 font-light">Niches, symbiosis, trophic cascades, and succession.</p>
+            </header>
+
+            <!-- Niche Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-4">The Ecological Niche</h3>
+                    <p class="text-stone-700 text-base mb-6">
+                        A species' niche is its multi-dimensional hypervolume—its specific role and requirements regarding all biotic and abiotic factors in its environment.
+                    </p>
+                    
+                    <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg mb-6 shadow-sm">
+                        <h4 class="font-bold text-amber-900 text-lg">Competitive Exclusion Principle</h4>
+                        <p class="text-sm text-stone-700 mt-2"><em>Gause's Law:</em> Two species competing for the exact same limiting resources cannot coexist. One will outcompete the other to local extinction, or evolutionary pressures will force <strong>Resource Partitioning</strong> (dividing the niche).</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="w-full sm:w-1/2 bg-stone-50 p-4 rounded-xl border border-stone-200 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-8 h-8 bg-stone-200 rounded-bl-full"></div>
+                            <strong class="text-stone-800 text-lg block mb-1">Fundamental Niche</strong>
+                            <p class="text-sm text-stone-600">The full potential physiological range a species <em>could</em> occupy.</p>
+                        </div>
+                        <div class="w-full sm:w-1/2 bg-emerald-50 p-4 rounded-xl border border-emerald-200 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-8 h-8 bg-emerald-200 rounded-bl-full"></div>
+                            <strong class="text-emerald-800 text-lg block mb-1">Realized Niche</strong>
+                            <p class="text-sm text-stone-600">The actual, narrower space it occupies due to competition & predation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-4">Ecological Succession</h3>
+                    <p class="text-stone-700 text-base mb-6 flex-grow">
+                        The sequential, predictable change in community composition over time following a disturbance.
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <div class="pl-4 border-l-4 border-stone-800 relative">
+                            <span class="absolute -left-[14px] top-1 bg-stone-800 w-6 h-6 rounded-full border-4 border-white"></span>
+                            <h4 class="font-bold text-stone-800 text-lg">Primary Succession</h4>
+                            <p class="text-sm text-stone-600 mt-1">Starts on completely barren rock with <strong>no soil</strong> (e.g., volcanic island, glacial retreat). Pioneer species like lichens must slowly break down rock to create soil. Takes centuries.</p>
+                        </div>
+                        <div class="pl-4 border-l-4 border-emerald-500 relative">
+                            <span class="absolute -left-[14px] top-1 bg-emerald-500 w-6 h-6 rounded-full border-4 border-white"></span>
+                            <h4 class="font-bold text-emerald-800 text-lg">Secondary Succession</h4>
+                            <p class="text-sm text-stone-600 mt-1">Occurs where a disturbance (fire, farming) cleared the community but left <strong>soil intact</strong>. Recovers much faster, progressing to a climax community.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interspecific Interactions -->
+            <div class="bg-white rounded-2xl shadow-sm p-8 mb-8 border border-stone-100">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h3 class="text-2xl font-bold text-emerald-800 mb-2">Interspecific Interactions</h3>
+                        <p class="text-stone-700 text-base">Hover over the cards to study symbiotic and antagonistic relationships.</p>
+                    </div>
+                </div>
+
+                <!-- Interactive Flip Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Mutualism -->
+                    <div class="flip-card perspective-1000 w-full h-64 bg-transparent cursor-pointer group">
+                        <div class="flip-card-inner relative w-full h-full text-center transform-style-3d shadow-md rounded-2xl">
+                            <div class="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+                                <span class="text-5xl mb-4 drop-shadow-sm">&#129309;</span>
+                                <h3 class="text-xl font-bold text-emerald-900">Mutualism</h3>
+                            </div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-emerald-800 text-white rounded-2xl p-6 flex flex-col justify-center text-left">
+                                <div class="text-2xl font-mono font-bold mb-2 bg-emerald-900/50 inline-block px-3 py-1 rounded w-max">(+, +)</div>
+                                <p class="text-sm font-bold mb-2 border-b border-emerald-600 pb-2">Both species benefit.</p>
+                                <p class="text-xs text-emerald-100 leading-relaxed"><strong>Ex:</strong> Zooxanthellae algae in corals. Algae provide sugars via photosynthesis; coral provides a safe, sunlit home.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Commensalism -->
+                    <div class="flip-card perspective-1000 w-full h-64 bg-transparent cursor-pointer group">
+                        <div class="flip-card-inner relative w-full h-full text-center transform-style-3d shadow-md rounded-2xl">
+                            <div class="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-stone-50 border border-stone-200 rounded-2xl p-6">
+                                <span class="text-5xl mb-4 drop-shadow-sm">&#128051;</span>
+                                <h3 class="text-xl font-bold text-stone-900">Commensalism</h3>
+                            </div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-stone-700 text-white rounded-2xl p-6 flex flex-col justify-center text-left">
+                                <div class="text-2xl font-mono font-bold mb-2 bg-stone-900/50 inline-block px-3 py-1 rounded w-max">(+, 0)</div>
+                                <p class="text-sm font-bold mb-2 border-b border-stone-500 pb-2">One benefits, one neutral.</p>
+                                <p class="text-xs text-stone-200 leading-relaxed"><strong>Ex:</strong> Cattle egrets eating insects flushed out by grazing water buffalo. Buffalo is unaffected.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parasitism -->
+                    <div class="flip-card perspective-1000 w-full h-64 bg-transparent cursor-pointer group">
+                        <div class="flip-card-inner relative w-full h-full text-center transform-style-3d shadow-md rounded-2xl">
+                            <div class="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                                <span class="text-5xl mb-4 drop-shadow-sm">&#129440;</span>
+                                <h3 class="text-xl font-bold text-amber-900">Parasitism</h3>
+                            </div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-amber-700 text-white rounded-2xl p-6 flex flex-col justify-center text-left">
+                                <div class="text-2xl font-mono font-bold mb-2 bg-amber-900/50 inline-block px-3 py-1 rounded w-max">(+, -)</div>
+                                <p class="text-sm font-bold mb-2 border-b border-amber-500 pb-2">Parasite benefits, host harmed.</p>
+                                <p class="text-xs text-amber-100 leading-relaxed"><strong>Ex:</strong> Endoparasites (tapeworms) live inside the host; ectoparasites (ticks) feed on the exterior surface.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Predation / Herbivory -->
+                    <div class="flip-card perspective-1000 w-full h-64 bg-transparent cursor-pointer group">
+                        <div class="flip-card-inner relative w-full h-full text-center transform-style-3d shadow-md rounded-2xl">
+                            <div class="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-orange-50 border border-orange-200 rounded-2xl p-6">
+                                <span class="text-5xl mb-4 drop-shadow-sm">&#129408;</span>
+                                <h3 class="text-xl font-bold text-orange-900 text-center leading-tight">Predation &<br>Herbivory</h3>
+                            </div>
+                            <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-orange-700 text-white rounded-2xl p-6 flex flex-col justify-center text-left">
+                                <div class="text-2xl font-mono font-bold mb-2 bg-orange-900/50 inline-block px-3 py-1 rounded w-max">(+, -)</div>
+                                <p class="text-sm font-bold mb-2 border-b border-orange-500 pb-2">Consumer benefits, prey dies.</p>
+                                <p class="text-xs text-orange-100 leading-relaxed">Drives intense evolutionary arms races. Leads to mechanical defenses, chemical toxins, and mimicry.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keystone Species Highlight -->
+            <div class="bg-indigo-900 text-white rounded-2xl p-8 shadow-lg flex flex-col md:flex-row items-center gap-8">
+                <div class="w-full md:w-2/3">
+                    <h3 class="text-2xl font-bold text-indigo-300 mb-3 flex items-center"><span class="mr-3 text-3xl">&#128032;</span> Keystone Species & Trophic Cascades</h3>
+                    <p class="text-stone-300 text-base leading-relaxed mb-4">
+                        A keystone species exerts strong control on community structure not by numerical might, but by its pivotal ecological role. Removing them causes a <strong>trophic cascade</strong>—a chain reaction altering multiple levels of the food web.
+                    </p>
+                    <p class="text-sm text-indigo-200 bg-indigo-950 p-4 rounded-lg border border-indigo-700/50 inline-block">
+                        <strong>Classic Example:</strong> Sea otters prey on sea urchins. If otters are removed, urchin populations explode and overgraze kelp forests, destroying the entire habitat for many other species.
+                    </p>
+                </div>
+                <div class="w-full md:w-1/3 flex justify-center text-6xl opacity-80">
+                    &#129422; &#10145;&#65039; &#128026; &#10145;&#65039; &#127793;
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 4: Energy & Ecosystems -->
+        <section id="module-ecosystem" class="tab-content max-w-6xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Ecosystems & Energy</h2>
+                <p class="text-xl text-stone-600 font-light">Energy flux, primary production, and biogeochemical cycling.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Primary Production -->
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-4">Primary Production</h3>
+                    <p class="text-stone-700 text-base mb-6">
+                        The amount of light energy converted to chemical energy by autotrophs (plants, algae). This sets the "energy budget" for the entire ecosystem.
+                    </p>
+                    <div class="space-y-4 font-mono text-base bg-stone-900 text-stone-200 p-6 rounded-xl shadow-inner flex-grow">
+                        <div>
+                            <span class="text-sky-400 font-bold block mb-1">GPP (Gross Primary Production)</span>
+                            <span class="text-sm text-stone-400">Total light energy assimilated.</span>
+                        </div>
+                        <div class="text-stone-500 border-b-2 border-stone-700 pb-4">
+                            - <span class="text-red-400 font-bold block mt-2 mb-1">R<sub class="text-xs">a</sub> (Autotrophic Respiration)</span>
+                            <span class="text-sm text-stone-400">Energy used by producers for their own cellular respiration.</span>
+                        </div>
+                        <div class="pt-2">
+                            = <span class="text-emerald-400 font-bold text-xl block mb-1">NPP (Net Primary Production)</span>
+                            <span class="text-sm text-stone-300">Energy stored as biomass, available to consumers.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10% Rule / Pyramid -->
+                <div class="bg-stone-50 rounded-2xl p-8 border border-stone-200 flex flex-col items-center">
+                    <h3 class="text-2xl font-bold text-stone-800 mb-2">Energy Transfer: 10% Rule</h3>
+                    <p class="text-sm text-stone-600 mb-8 text-center max-w-sm">Secondary production is chemical energy in food converted to new consumer biomass. Only ~10% transfers up. Heat is lost at every step.</p>
+                    
+                    <div class="w-full max-w-sm flex flex-col items-center gap-[2px] relative group mt-auto mb-4">
+                        <!-- Tooltip -->
+                        <div class="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center pointer-events-none">
+                            <div class="bg-stone-900/95 text-white text-sm p-4 rounded-lg shadow-xl max-w-[250px] text-center border border-stone-700">
+                                This massive energy loss is why top apex predators are rare, and food chains rarely exceed 4 or 5 trophic levels.
+                            </div>
+                        </div>
+                        
+                        <div class="pyramid-level bg-red-500 w-[30%] h-12 rounded-t-lg flex items-center justify-center text-white font-bold text-sm shadow-sm relative overflow-hidden">
+                            <div class="absolute inset-0 bg-black/10"></div>
+                            <span class="relative z-10">10 J (Tertiary)</span>
+                        </div>
+                        <div class="pyramid-level bg-orange-500 w-[50%] h-12 flex items-center justify-center text-white font-bold text-sm shadow-sm relative overflow-hidden">
+                            <div class="absolute inset-0 bg-black/5"></div>
+                            <span class="relative z-10">100 J (Secondary)</span>
+                        </div>
+                        <div class="pyramid-level bg-amber-500 w-[75%] h-14 flex items-center justify-center text-white font-bold text-base shadow-sm relative overflow-hidden">
+                            <span class="relative z-10">1,000 J (Primary)</span>
+                        </div>
+                        <div class="pyramid-level bg-emerald-600 w-full h-16 rounded-b-lg flex items-center justify-center text-white font-bold text-lg shadow-sm relative overflow-hidden">
+                            <div class="absolute inset-0 bg-white/10"></div>
+                            <span class="relative z-10">10,000 J (Producers - NPP)</span>
+                        </div>
+                        <div class="text-amber-500 text-2xl mt-4 font-bold flex items-center animate-pulse">
+                            <span class="text-3xl mr-2">&#9728;&#65039;</span> 1,000,000 J Sunlight
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biogeochemical Cycles Interactive -->
+            <div class="bg-white rounded-2xl shadow-md border border-stone-200 overflow-hidden">
+                <div class="bg-stone-900 p-6 border-b border-stone-800">
+                    <h3 class="text-2xl font-bold text-white mb-1">Biogeochemical Cycles</h3>
+                    <p class="text-sm text-stone-400">Nutrients circulate via biological, geological, and chemical processes. Select a cycle to explore.</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row">
+                    <!-- Nav Tabs -->
+                    <div class="w-full md:w-1/3 flex flex-row md:flex-col bg-stone-100 border-r border-stone-200 overflow-x-auto shadow-inner">
+                        <button class="cycle-btn active flex-1 text-left px-6 py-4 text-base font-bold border-b md:border-b-0 md:border-l-4 border-transparent text-stone-700 hover:bg-stone-200 transition" data-cycle="carbon">Carbon Cycle</button>
+                        <button class="cycle-btn flex-1 text-left px-6 py-4 text-base font-bold border-b md:border-b-0 md:border-l-4 border-transparent text-stone-700 hover:bg-stone-200 transition" data-cycle="nitrogen">Nitrogen Cycle</button>
+                        <button class="cycle-btn flex-1 text-left px-6 py-4 text-base font-bold border-b md:border-b-0 md:border-l-4 border-transparent text-stone-700 hover:bg-stone-200 transition" data-cycle="water">Water Cycle</button>
+                        <button class="cycle-btn flex-1 text-left px-6 py-4 text-base font-bold border-b md:border-b-0 md:border-l-4 border-transparent text-stone-700 hover:bg-stone-200 transition" data-cycle="phosphorus">Phosphorus Cycle</button>
+                    </div>
+                    
+                    <!-- Content Area -->
+                    <div class="w-full md:w-2/3 p-8 min-h-[300px] flex items-start bg-white">
+                        
+                        <!-- Carbon -->
+                        <div id="cycle-carbon" class="cycle-content w-full fade-in">
+                            <h4 class="text-3xl font-black text-stone-800 mb-4 flex items-center"><span class="bg-stone-800 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg mr-4 shadow-sm">C</span> The Carbon Cycle</h4>
+                            <p class="text-base text-stone-600 mb-6">Carbon forms the framework of all organic molecules. The balance is largely maintained by photosynthesis and respiration.</p>
+                            <ul class="text-base space-y-4 border-l-4 border-stone-300 pl-6 text-stone-700">
+                                <li><strong class="text-emerald-700">Photosynthesis:</strong> Autotrophs remove CO₂ from the atmosphere to build glucose.</li>
+                                <li><strong class="text-amber-700">Cellular Respiration:</strong> All organisms break down glucose for ATP, returning CO₂ to the air.</li>
+                                <li><strong class="text-stone-900">Fossil Fuels:</strong> Long-term storage (sinks) in the earth. Burning these rapidly releases massive amounts of ancient CO₂, causing global warming.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Nitrogen -->
+                        <div id="cycle-nitrogen" class="cycle-content w-full hidden">
+                            <h4 class="text-3xl font-black text-stone-800 mb-4 flex items-center"><span class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg mr-4 shadow-sm">N</span> The Nitrogen Cycle</h4>
+                            <p class="text-base text-stone-600 mb-6">Crucial for amino acids (proteins) and nucleic acids. The atmosphere is 78% N₂, but it is unusable to plants directly.</p>
+                            <ul class="text-base space-y-4 border-l-4 border-blue-400 pl-6 text-stone-700">
+                                <li><strong class="text-blue-800">Nitrogen Fixation:</strong> Specialized bacteria (e.g., in legume roots) convert N₂ gas to ammonia (NH₃/NH₄⁺).</li>
+                                <li><strong class="text-blue-800">Nitrification:</strong> Soil bacteria convert ammonium to nitrates (NO₃⁻), the form plants prefer to absorb.</li>
+                                <li><strong class="text-blue-800">Denitrification:</strong> Other bacteria convert nitrates back to N₂ gas in anaerobic, waterlogged soil.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Water -->
+                        <div id="cycle-water" class="cycle-content w-full hidden">
+                            <h4 class="text-3xl font-black text-stone-800 mb-4 flex items-center"><span class="bg-cyan-500 text-white w-10 h-10 rounded-full flex items-center justify-center text-sm mr-4 shadow-sm font-mono">H₂O</span> The Water Cycle</h4>
+                            <p class="text-base text-stone-600 mb-6">Water drives global climate and biome distribution. It is a physical process, unlike the chemical changes in C and N cycles.</p>
+                            <ul class="text-base space-y-4 border-l-4 border-cyan-400 pl-6 text-stone-700">
+                                <li><strong class="text-cyan-800">Evaporation:</strong> Solar energy turns liquid water to vapor.</li>
+                                <li><strong class="text-emerald-700">Transpiration:</strong> Massive amounts of evaporation specifically driven by plant leaves.</li>
+                                <li><strong class="text-cyan-800">Precipitation:</strong> Condensed vapor falls back to Earth, sustaining terrestrial life.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Phosphorus -->
+                        <div id="cycle-phosphorus" class="cycle-content w-full hidden">
+                            <h4 class="text-3xl font-black text-stone-800 mb-4 flex items-center"><span class="bg-purple-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg mr-4 shadow-sm">P</span> The Phosphorus Cycle</h4>
+                            <p class="text-base text-stone-600 mb-6">Major constituent of nucleic acids, phospholipids, and ATP. <em>Critically: It lacks a significant gas phase in the atmosphere.</em></p>
+                            <ul class="text-base space-y-4 border-l-4 border-purple-400 pl-6 text-stone-700">
+                                <li><strong class="text-purple-800">Weathering:</strong> Slow breakdown of rocks adds phosphate (PO₄³⁻) to soil.</li>
+                                <li><strong class="text-purple-800">Leaching & Runoff:</strong> Rain washes phosphates into aquatic systems. Excess from human fertilizers causes severe algal blooms (eutrophication).</li>
+                                <li><strong class="text-purple-800">Sedimentation:</strong> Phosphates settle on the ocean floor to eventually become new rock over millions of years.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 5: Global Biomes -->
+        <section id="module-biomes" class="tab-content max-w-6xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Global Biomes</h2>
+                <p class="text-xl text-stone-600 font-light">Major life zones characterized by climate and physical environments.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Terrestrial Biomes Chart -->
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-emerald-800 mb-2">Terrestrial Biomes</h3>
+                    <p class="text-stone-600 text-sm mb-6">
+                        Determined primarily by <strong>climate</strong> (Mean Temp & Precipitation). The Whittaker plot visualizes these boundaries.
+                    </p>
+                    <div class="chart-container flex-grow min-h-[350px]">
+                        <canvas id="biomeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Aquatic Biomes / Zonation Diagram -->
+                <div class="bg-white rounded-2xl shadow-sm p-8 border border-stone-100 flex flex-col">
+                    <h3 class="text-2xl font-bold text-blue-800 mb-2">Aquatic Zonation</h3>
+                    <p class="text-stone-600 text-sm mb-6">
+                        Aquatic biomes form the largest part of the biosphere. They are physically stratified based on light penetration and depth.
+                    </p>
+                    
+                    <!-- CSS Interactive Diagram (NO SVG) -->
+                    <div class="relative w-full h-80 border-2 border-stone-400 bg-blue-900 rounded-lg overflow-hidden flex font-sans select-none shadow-inner">
+                        
+                        <!-- Intertidal -->
+                        <div class="aquatic-zone relative w-1/4 h-full border-r-2 border-blue-950/50 flex flex-col group cursor-help">
+                            <div class="h-16 bg-gradient-to-b from-amber-100 to-amber-200 flex items-center justify-center border-b-2 border-stone-400 text-xs font-bold text-stone-800 shadow-sm text-center px-1">Intertidal Zone</div>
+                            <div class="flex-grow bg-blue-400/40 border-r border-white/20"></div>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute left-2 top-20 w-48 bg-white/95 p-3 rounded shadow-2xl text-xs hidden group-hover:block z-20 text-stone-800 border border-stone-200">
+                                <strong class="text-blue-800 text-sm">Intertidal:</strong> Periodically submerged by tides. Brutal physical environment requiring adaptations against desiccation and wave force.
+                            </div>
+                        </div>
+
+                        <!-- Main Ocean Body -->
+                        <div class="relative w-3/4 h-full flex flex-col">
+                            
+                            <!-- Neritic / Oceanic Labels Top -->
+                            <div class="absolute top-0 w-full h-8 flex z-10 text-[11px] font-black text-blue-900 bg-white/70 backdrop-blur-md border-b border-white/40 shadow-sm">
+                                <div class="w-1/3 flex items-center justify-center border-r border-blue-900/20">NERITIC</div>
+                                <div class="w-2/3 flex items-center justify-center">OCEANIC (PELAGIC)</div>
+                            </div>
+
+                            <!-- Photic Zone -->
+                            <div class="aquatic-zone relative w-full h-[35%] bg-gradient-to-b from-blue-300 to-blue-500 border-b border-blue-400 flex items-center justify-center group cursor-help pt-8">
+                                <span class="text-white font-black tracking-widest text-lg drop-shadow-md">PHOTIC ZONE</span>
+                                <div class="absolute top-12 left-1/2 -translate-x-1/2 w-56 bg-white/95 p-3 rounded shadow-2xl text-xs hidden group-hover:block z-20 text-stone-800 text-center border border-stone-200">
+                                    Sufficient light for photosynthesis. Contains nearly all phytoplankton (base of the marine food web).
+                                </div>
+                            </div>
+
+                            <!-- Aphotic Zone -->
+                            <div class="aquatic-zone relative w-full flex-grow bg-gradient-to-b from-blue-700 to-blue-950 flex flex-col items-center justify-center group cursor-help">
+                                <span class="text-white/40 font-black tracking-widest text-lg">APHOTIC ZONE</span>
+                                <span class="text-white/20 text-[10px] mt-1">(Abyssal below)</span>
+                                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 bg-white/95 p-3 rounded shadow-2xl text-xs hidden group-hover:block z-20 text-stone-800 text-center border border-stone-200">
+                                    No light penetration. Cold, high pressure. Life depends on "marine snow" (detritus) sinking from above.
+                                </div>
+                            </div>
+
+                            <!-- Benthic Floor -->
+                            <div class="aquatic-zone relative w-full h-16 bg-stone-800 flex items-center justify-center border-t-4 border-stone-600 group cursor-help shadow-[inset_0_10px_20px_rgba(0,0,0,0.5)]">
+                                <span class="text-stone-400 font-bold tracking-widest text-sm">BENTHIC ZONE</span>
+                                <div class="absolute bottom-20 left-1/2 -translate-x-1/2 w-56 bg-white/95 p-3 rounded shadow-2xl text-xs hidden group-hover:block z-20 text-stone-800 text-center border border-stone-200">
+                                    The ocean floor. Inhabited by benthos communities feeding on detritus. Can include hydrothermal vents.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-stone-500 mt-4 text-center">Hover over zones to explore. Freshwater lakes feature similar structuring (Littoral = shore, Limnetic = open surface).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 6: Knowledge Check -->
+        <section id="module-quiz" class="tab-content max-w-4xl mx-auto pb-12">
+            <header class="mb-10 border-b-2 border-stone-200 pb-6">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-3 tracking-tight">Comprehensive Knowledge Check</h2>
+                <p class="text-xl text-stone-600 font-light">Test your mastery of general ecology concepts across all modules.</p>
+            </header>
+
+            <div class="bg-white rounded-2xl shadow-xl border border-emerald-100 p-8 md:p-12 relative overflow-hidden" id="quiz-container">
+                <!-- Decorative background blob -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-bl-full -z-10 opacity-50"></div>
+
+                <div class="flex justify-between items-center mb-8 pb-4 border-b border-stone-100">
+                    <span class="text-sm font-bold text-emerald-600 tracking-widest uppercase bg-emerald-50 px-3 py-1 rounded-full" id="quiz-progress">Question 1 of 11</span>
+                    <span class="text-lg px-4 py-1 bg-stone-800 text-white rounded font-mono font-bold shadow-sm" id="quiz-score">Score: 0</span>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-stone-800 mb-8 leading-snug" id="quiz-question">Loading question...</h3>
+                
+                <div class="space-y-4" id="quiz-options">
+                    <!-- Options populated by JS -->
+                </div>
+
+                <div id="quiz-feedback" class="mt-8 p-6 rounded-xl hidden"></div>
+
+                <button id="next-q-btn" class="mt-8 w-full bg-emerald-600 text-white font-black text-lg py-4 rounded-xl hidden hover:bg-emerald-700 hover:shadow-lg transition-all transform hover:-translate-y-1">Next Question</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Navigation Logic (SPA View Switching) ---
+            const navButtons = document.querySelectorAll('.nav-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const navMenu = document.getElementById('nav-menu');
+
+            function switchTab(targetId) {
+                // Hide all contents and remove animations
+                tabContents.forEach(content => {
+                    content.classList.remove('active', 'fade-in');
+                });
+                
+                // Reset nav buttons
+                navButtons.forEach(btn => {
+                    btn.classList.remove('bg-emerald-700', 'text-white', 'shadow-sm');
+                    if (!btn.classList.contains('border-emerald-500')) { 
+                        btn.classList.add('text-stone-300', 'hover:bg-stone-800');
+                    }
+                });
+
+                // Show target content
+                const targetEl = document.getElementById(targetId);
+                if(targetEl) {
+                    // Slight delay to re-trigger animation cleanly
+                    setTimeout(() => targetEl.classList.add('active', 'fade-in'), 10);
+                }
+
+                // Highlight active nav button
+                const activeBtn = document.querySelector(`.nav-btn[data-target="${targetId}"]`);
+                if(activeBtn) {
+                    if (!activeBtn.classList.contains('border-emerald-500')) {
+                        activeBtn.classList.remove('text-stone-300', 'hover:bg-stone-800');
+                        activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-sm');
+                    }
+                }
+
+                // Close mobile menu
+                if(window.innerWidth < 768) {
+                    navMenu.classList.add('hidden');
+                }
+                
+                // Scroll to top of main area
+                document.querySelector('main').scrollTop = 0;
+            }
+
+            navButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const target = e.currentTarget.dataset.target; // use currentTarget for elements with children
+                    switchTab(target);
+                });
+            });
+
+            mobileMenuBtn.addEventListener('click', () => {
+                navMenu.classList.toggle('hidden');
+            });
+
+
+            // --- Chart.js: Population Growth ---
+            const popCanvas = document.getElementById('populationChart');
+            const generations = Array.from({length: 25}, (_, i) => i);
+            const r = 0.35;
+            const K = 1200;
+            const N0 = 20;
+            
+            const expData = generations.map(t => N0 * Math.pow(Math.E, r * t));
+            const logData = generations.map(t => K / (1 + ((K - N0)/N0) * Math.pow(Math.E, -r * t)));
+
+            let showCarryingCapacity = true;
+
+            const popChart = new Chart(popCanvas, {
+                type: 'line',
+                data: {
+                    labels: generations,
+                    datasets: [
+                        {
+                            label: 'Exponential (J)',
+                            data: expData,
+                            borderColor: '#f59e0b', // amber-500
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            hidden: true 
+                        },
+                        {
+                            label: 'Logistic (S)',
+                            data: logData,
+                            borderColor: '#059669', // emerald-600
+                            backgroundColor: 'rgba(5, 150, 105, 0.2)',
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Carrying Capacity (K)',
+                            data: generations.map(() => K),
+                            borderColor: '#ef4444', // red-500
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } },
+                    },
+                    scales: {
+                        y: { 
+                            title: { display: true, text: 'Population Size (N)', font: {weight: 'bold'} }, 
+                            max: 1800 
+                        },
+                        x: { 
+                            title: { display: true, text: 'Time (Generations)', font: {weight: 'bold'} } 
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('toggle-carrying-capacity').addEventListener('click', (e) => {
+                showCarryingCapacity = !showCarryingCapacity;
+                popChart.data.datasets[2].hidden = !showCarryingCapacity;
+                popChart.update();
+                e.target.classList.toggle('bg-stone-200');
+                e.target.classList.toggle('bg-red-100');
+                e.target.classList.toggle('text-red-800');
+            });
+
+
+            // --- Chart.js: Survivorship Curves ---
+            const surCanvas = document.getElementById('survivorshipChart');
+            const agePct = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+            const type1 = [1000, 990, 980, 970, 950, 900, 800, 600, 300, 50, 0];
+            const type2 = [1000, 500, 250, 125, 62, 31, 15, 8, 4, 2, 0]; 
+            const type3 = [1000, 100, 50, 30, 20, 15, 10, 8, 5, 2, 0]; 
+
+            new Chart(surCanvas, {
+                type: 'line',
+                data: {
+                    labels: agePct,
+                    datasets: [
+                        { label: 'Type I (Human)', data: type1, borderColor: '#ef4444', borderWidth: 3, tension: 0.3, pointBackgroundColor: '#ef4444' },
+                        { label: 'Type II (Bird)', data: type2, borderColor: '#3b82f6', borderWidth: 3, tension: 0.3, pointBackgroundColor: '#3b82f6' },
+                        { label: 'Type III (Tree)', data: type3, borderColor: '#22c55e', borderWidth: 3, tension: 0.3, pointBackgroundColor: '#22c55e' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'top', labels: { usePointStyle: true } } 
+                    },
+                    scales: {
+                        y: { 
+                            type: 'logarithmic', 
+                            title: { display: true, text: 'Number of Survivors (Log Scale)', font: {weight: 'bold'} },
+                            min: 1, max: 1000,
+                            ticks: { callback: function(value) { return value === 1000 || value === 100 || value === 10 || value === 1 ? value : ''; } }
+                        },
+                        x: { 
+                            title: { display: true, text: 'Percentage of Maximum Lifespan', font: {weight: 'bold'} } 
+                        }
+                    }
+                }
+            });
+
+
+            // --- Biodiversity Interactive Logic ---
+            const sliders = {
+                A: document.getElementById('slider-spA'),
+                B: document.getElementById('slider-spB'),
+                C: document.getElementById('slider-spC'),
+                D: document.getElementById('slider-spD')
+            };
+            const vals = {
+                A: document.getElementById('val-spA'),
+                B: document.getElementById('val-spB'),
+                C: document.getElementById('val-spC'),
+                D: document.getElementById('val-spD')
+            };
+            
+            const bioCanvas = document.getElementById('biodiversityChart');
+            const bioChart = new Chart(bioCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Species A', 'Species B', 'Species C', 'Species D'],
+                    datasets: [{
+                        data: [50, 50, 50, 50],
+                        backgroundColor: ['#34d399', '#60a5fa', '#fbbf24', '#c084fc'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { legend: { display: false }, tooltip: { bodyFont: {size: 14} } }
+                }
+            });
+
+            function updateBiodiversity() {
+                // Get values
+                const n = [
+                    parseInt(sliders.A.value), parseInt(sliders.B.value), 
+                    parseInt(sliders.C.value), parseInt(sliders.D.value)
+                ];
+                
+                // Update text labels
+                vals.A.innerText = n[0]; vals.B.innerText = n[1];
+                vals.C.innerText = n[2]; vals.D.innerText = n[3];
+
+                // Calculate metrics
+                const N = n.reduce((sum, val) => sum + val, 0);
+                const richness = n.filter(val => val > 0).length;
+                
+                let shannon = 0;
+                let simpsonD = 0;
+
+                if (N > 0) {
+                    n.forEach(val => {
+                        if (val > 0) {
+                            const p = val / N;
+                            shannon -= (p * Math.log(p));
+                            simpsonD += (p * p);
+                        }
+                    });
+                }
+                const simpsonIndex = N > 0 ? (1 - simpsonD) : 0;
+
+                // Update DOM Outputs
+                document.getElementById('out-total').innerText = N;
+                document.getElementById('out-richness').innerText = richness;
+                document.getElementById('out-shannon').innerText = shannon.toFixed(2);
+                document.getElementById('out-simpson').innerText = simpsonIndex.toFixed(2);
+
+                // Update Chart
+                bioChart.data.datasets[0].data = n;
+                bioChart.update();
+            }
+
+            // Attach listeners to sliders
+            Object.values(sliders).forEach(slider => {
+                slider.addEventListener('input', updateBiodiversity);
+            });
+
+            // Preset button
+            document.getElementById('preset-uneven').addEventListener('click', () => {
+                sliders.A.value = 95; sliders.B.value = 2; 
+                sliders.C.value = 2; sliders.D.value = 1;
+                updateBiodiversity();
+            });
+
+            // Initialize once
+            updateBiodiversity();
+
+
+            // --- Biogeochemical Cycles Tabs ---
+            const cycleBtns = document.querySelectorAll('.cycle-btn');
+            const cycleContents = document.querySelectorAll('.cycle-content');
+
+            cycleBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.dataset.cycle;
+                    
+                    cycleBtns.forEach(b => {
+                        b.classList.remove('active', 'border-l-4');
+                        b.style.borderColor = 'transparent';
+                    });
+                    cycleContents.forEach(c => {
+                        c.classList.add('hidden');
+                        c.classList.remove('fade-in');
+                    });
+                    
+                    btn.classList.add('active', 'border-l-4');
+                    if(target === 'carbon') btn.style.borderColor = '#1f2937';
+                    if(target === 'nitrogen') btn.style.borderColor = '#2563eb';
+                    if(target === 'water') btn.style.borderColor = '#06b6d4';
+                    if(target === 'phosphorus') btn.style.borderColor = '#9333ea';
+
+                    const targetContent = document.getElementById(`cycle-${target}`);
+                    targetContent.classList.remove('hidden');
+                    // slight delay to ensure display:block applies before animation
+                    setTimeout(() => targetContent.classList.add('fade-in'), 10);
+                });
+            });
+
+
+            // --- Chart.js: Whittaker Biome Scatter Plot ---
+            const biomeCanvas = document.getElementById('biomeChart');
+            new Chart(biomeCanvas, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Tropical Rainforest', data: [{x: 28, y: 320}, {x: 25, y: 260}, {x: 27, y: 410}], backgroundColor: '#059669', pointRadius: 12, pointHoverRadius: 15 },
+                        { label: 'Desert', data: [{x: 22, y: 20}, {x: 30, y: 10}, {x: 18, y: 30}, {x: 10, y: 15}], backgroundColor: '#fcd34d', pointRadius: 10, pointHoverRadius: 13 },
+                        { label: 'Tundra', data: [{x: -12, y: 20}, {x: -5, y: 40}, {x: -15, y: 15}], backgroundColor: '#7dd3fc', pointRadius: 10, pointHoverRadius: 13 },
+                        { label: 'Temperate Forest', data: [{x: 10, y: 120}, {x: 15, y: 160}, {x: 8, y: 90}], backgroundColor: '#4ade80', pointRadius: 11, pointHoverRadius: 14 },
+                        { label: 'Grassland', data: [{x: 12, y: 50}, {x: 20, y: 80}, {x: 5, y: 40}], backgroundColor: '#fbbf24', pointRadius: 10, pointHoverRadius: 13 },
+                        { label: 'Taiga (Boreal)', data: [{x: -2, y: 60}, {x: 2, y: 80}, {x: -8, y: 40}], backgroundColor: '#0f766e', pointRadius: 11, pointHoverRadius: 14 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+                        tooltip: {
+                            backgroundColor: 'rgba(28, 25, 23, 0.9)',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return `${ctx.dataset.label}: ~${ctx.parsed.x}°C, ~${ctx.parsed.y}cm rain`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Mean Annual Temperature (°C)', font: {weight: 'bold'} }, min: -20, max: 35 },
+                        y: { title: { display: true, text: 'Mean Annual Precipitation (cm)', font: {weight: 'bold'} }, min: 0, max: 450 }
+                    }
+                }
+            });
+
+            // --- Elaborate Quiz Logic (11 Questions) ---
+            const questions = [
+                {
+                    q: "Which level of ecological organization focuses on energy flux and biogeochemical cycling?",
+                    options: ["Community", "Population", "Ecosystem", "Biosphere"],
+                    ans: 2,
+                    explanation: "Ecosystem ecology emphasizes energy flow and chemical cycling among the various biotic and abiotic components."
+                },
+                {
+                    q: "A species of plant releases toxins into the soil that prevent other plants from growing nearby (allelopathy). What population dispersion pattern is this most likely to produce?",
+                    options: ["Random", "Clumped", "Uniform", "Exponential"],
+                    ans: 2,
+                    explanation: "Uniform dispersion often results from antagonistic interactions, such as territoriality or chemical inhibition, to maintain personal resource space."
+                },
+                {
+                    q: "Which life history strategy is characterized by many small offspring, rapid maturation, and little to no parental care?",
+                    options: ["K-selected", "Type I survivorship", "Iteroparity", "r-selected"],
+                    ans: 3,
+                    explanation: "r-selected species maximize their reproductive rate (r) to take advantage of unstable environments, producing many 'cheap' offspring."
+                },
+                {
+                    q: "Two forests each have 4 species of trees. Forest A has 25 trees of each species. Forest B has 97 trees of one species, and 1 tree each of the other three. Which statement is mathematically true regarding their biodiversity indices?",
+                    options: ["Forest B has a higher Shannon Index.", "Forest A has a higher Shannon Index due to greater species evenness.", "Both forests have the exact same Shannon Index because their richness is equal.", "Forest B has higher richness."],
+                    ans: 1,
+                    explanation: "While both have the same species richness (S=4), Forest A has perfect species evenness. The Shannon Index accounts for both, meaning the highly even Forest A will have a significantly higher diversity score."
+                },
+                {
+                    q: "According to the Competitive Exclusion Principle, what happens when two species have identical fundamental niches?",
+                    options: ["They perfectly share the resources.", "One will outcompete and exclude the other.", "They merge into a single species.", "Both instantly go extinct."],
+                    ans: 1,
+                    explanation: "Gause's law states two species competing for the exact same limiting resources cannot coexist in the same place; one is always slightly more efficient."
+                },
+                {
+                    q: "Sea otters prey on sea urchins, keeping urchin populations in check and preventing them from destroying kelp forests. In this scenario, the sea otter is a:",
+                    options: ["Pioneer species", "Dominant species", "Keystone species", "Primary producer"],
+                    ans: 2,
+                    explanation: "Keystone species exert strong control on community structure due to their pivotal ecological role, not necessarily their numerical abundance."
+                },
+                {
+                    q: "In an ecosystem, Gross Primary Production (GPP) is 15,000 J and Autotrophic Respiration (Ra) is 5,000 J. What is the Net Primary Production (NPP)?",
+                    options: ["20,000 J", "10,000 J", "5,000 J", "3,000 J"],
+                    ans: 1,
+                    explanation: "NPP = GPP - Ra. So, 15,000 J - 5,000 J = 10,000 J of energy stored as biomass and available to primary consumers."
+                },
+                {
+                    q: "Which biogeochemical cycle lacks a significant atmospheric (gas) component?",
+                    options: ["Carbon Cycle", "Nitrogen Cycle", "Water Cycle", "Phosphorus Cycle"],
+                    ans: 3,
+                    explanation: "The Phosphorus cycle primarily occurs locally through soil, rock weathering, and aquatic systems, without a substantial gas phase in the atmosphere."
+                },
+                {
+                    q: "Which aquatic zone represents the deep open ocean where light penetration is insufficient for photosynthesis?",
+                    options: ["Intertidal zone", "Photic zone", "Aphotic (Pelagic) zone", "Benthic zone"],
+                    ans: 2,
+                    explanation: "The Aphotic zone is the vast dark region of the open ocean. Food chains here rely heavily on detritus ('marine snow') sinking from the photic zone above."
+                },
+                {
+                    q: "A glacier retreats, leaving behind bare rock. Which type of succession will occur, and what is a likely pioneer species?",
+                    options: ["Secondary; Oak trees", "Primary; Lichens", "Primary; Grasses", "Secondary; Lichens"],
+                    ans: 1,
+                    explanation: "Primary succession occurs where no soil exists. Lichens are typical pioneer species because they can survive on bare rock and slowly break it down to form soil."
+                },
+                {
+                    q: "A biome is primarily defined by which two abiotic factors?",
+                    options: ["Soil pH and salinity", "Wind speed and sunlight", "Temperature and precipitation", "Latitude and longitude"],
+                    ans: 2,
+                    explanation: "Mean annual temperature and mean annual precipitation are the dominant climatic factors that determine the distribution of terrestrial biomes (as seen on the Whittaker plot)."
+                }
+            ];
+
+            let currentQ = 0;
+            let score = 0;
+            
+            const qContainer = document.getElementById('quiz-question');
+            const optContainer = document.getElementById('quiz-options');
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const nextBtn = document.getElementById('next-q-btn');
+            const progressTxt = document.getElementById('quiz-progress');
+            const scoreTxt = document.getElementById('quiz-score');
+
+            function loadQuestion() {
+                const qData = questions[currentQ];
+                qContainer.innerText = qData.q;
+                optContainer.innerHTML = '';
+                feedbackBox.className = 'hidden mt-8 p-6 rounded-xl';
+                nextBtn.classList.add('hidden');
+                progressTxt.innerText = `Question ${currentQ + 1} of ${questions.length}`;
+
+                qData.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-left p-5 bg-stone-50 border-2 border-stone-200 rounded-xl hover:bg-stone-100 hover:border-emerald-300 transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/30 font-semibold text-stone-700 text-lg';
+                    btn.innerText = opt;
+                    btn.onclick = () => checkAnswer(idx, btn);
+                    optContainer.appendChild(btn);
+                });
+            }
+
+            function checkAnswer(selectedIdx, btnElement) {
+                const buttons = optContainer.querySelectorAll('button');
+                buttons.forEach(b => {
+                    b.disabled = true;
+                    b.classList.remove('hover:bg-stone-100', 'hover:border-emerald-300');
+                    b.classList.add('opacity-70', 'cursor-not-allowed');
+                });
+
+                const correctIdx = questions[currentQ].ans;
+                const isCorrect = selectedIdx === correctIdx;
+
+                if (isCorrect) {
+                    btnElement.classList.replace('bg-stone-50', 'bg-emerald-100');
+                    btnElement.classList.replace('border-stone-200', 'border-emerald-500');
+                    btnElement.classList.remove('opacity-70');
+                    score++;
+                    scoreTxt.innerText = `Score: ${score}`;
+                    
+                    feedbackBox.innerHTML = `
+                        <div class="flex items-start">
+                            <span class="text-3xl mr-4">&#9989;</span>
+                            <div>
+                                <strong class="text-emerald-800 text-xl block mb-2">Correct!</strong> 
+                                <p class="text-base text-emerald-900 leading-relaxed">${questions[currentQ].explanation}</p>
+                            </div>
+                        </div>`;
+                    feedbackBox.className = 'mt-8 p-6 rounded-xl bg-emerald-50 border-2 border-emerald-300 fade-in block shadow-inner';
+                } else {
+                    btnElement.classList.replace('bg-stone-50', 'bg-red-100');
+                    btnElement.classList.replace('border-stone-200', 'border-red-500');
+                    btnElement.classList.remove('opacity-70');
+                    
+                    buttons[correctIdx].classList.replace('bg-stone-50', 'bg-emerald-50');
+                    buttons[correctIdx].classList.replace('border-stone-200', 'border-emerald-500');
+                    buttons[correctIdx].classList.remove('opacity-70');
+                    
+                    feedbackBox.innerHTML = `
+                        <div class="flex items-start">
+                            <span class="text-3xl mr-4">&#10060;</span>
+                            <div>
+                                <strong class="text-red-800 text-xl block mb-2">Incorrect</strong> 
+                                <p class="text-sm text-red-900 mb-2">The correct answer was: <strong class="bg-red-100 px-1 rounded">${questions[currentQ].options[correctIdx]}</strong></p>
+                                <p class="text-base text-red-900 leading-relaxed border-t border-red-200 pt-2">${questions[currentQ].explanation}</p>
+                            </div>
+                        </div>`;
+                    feedbackBox.className = 'mt-8 p-6 rounded-xl bg-red-50 border-2 border-red-300 fade-in block shadow-inner';
+                }
+
+                nextBtn.classList.remove('hidden');
+                // Scroll to next button
+                setTimeout(() => nextBtn.scrollIntoView({behavior: 'smooth', block: 'end'}), 100);
+            }
+
+            nextBtn.addEventListener('click', () => {
+                currentQ++;
+                if (currentQ < questions.length) {
+                    loadQuestion();
+                    document.getElementById('quiz-container').scrollIntoView({behavior: 'smooth', block: 'start'});
+                } else {
+                    const pct = Math.round((score / questions.length) * 100);
+                    let msg = pct >= 80 ? "Outstanding! You have demonstrated high competency in general ecology." : 
+                             (pct >= 60 ? "Good effort. Review specific modules to solidify your understanding." : 
+                                          "Please thoroughly review all modules before attempting the check again.");
+                    let color = pct >= 80 ? "text-emerald-600" : (pct >= 60 ? "text-amber-500" : "text-red-500");
+                    
+                    qContainer.innerText = "Competency Assessment Completed";
+                    optContainer.innerHTML = `
+                        <div class="text-center p-12 bg-stone-50 rounded-2xl border-2 border-stone-200 shadow-inner">
+                            <p class="text-7xl font-black ${color} mb-4">${pct}%</p>
+                            <p class="text-2xl font-bold text-stone-800 mb-4">Final Score: ${score} / ${questions.length}</p>
+                            <p class="text-stone-600 text-lg max-w-lg mx-auto leading-relaxed">${msg}</p>
+                        </div>
+                    `;
+                    feedbackBox.classList.add('hidden');
+                    progressTxt.innerText = "Results";
+                    
+                    nextBtn.innerText = "Retake Assessment";
+                    nextBtn.onclick = () => {
+                        currentQ = 0; score = 0; scoreTxt.innerText = `Score: 0`;
+                        nextBtn.innerText = "Next Question";
+                        nextBtn.onclick = null; // Remove this specific handler
+                        // Re-bind standard progression handler
+                        nextBtn.addEventListener('click', function defaultNext() {
+                             if(nextBtn.innerText === "Retake Assessment") return; 
+                             currentQ++;
+                             if (currentQ < questions.length) {
+                                 loadQuestion();
+                                 document.getElementById('quiz-container').scrollIntoView({behavior: 'smooth', block: 'start'});
+                             }
+                        }, {once: true}); 
+                        loadQuestion();
+                    };
+                }
+            });
+
+            // Initialize App
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>

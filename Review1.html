@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced General Genetics Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            scroll-behavior: smooth;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #0f766e;
+            color: #0f766e;
+            font-weight: 600;
+        }
+
+        .tab-inactive {
+            border-bottom: 2px solid transparent;
+            color: #64748b;
+        }
+
+        .accordion-content {
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .accordion-active .accordion-content {
+            max-height: 500px; 
+            padding-bottom: 1rem;
+        }
+
+        .accordion-active .accordion-icon {
+            transform: rotate(180deg);
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .nav-link.active {
+            background-color: #e2e8f0;
+            color: #0f766e;
+            font-weight: 600;
+            border-left: 4px solid #0f766e;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-teal-200 selection:text-teal-900">
+
+<!-- Chosen Palette: Warm Neutrals with Teal Accents (Slate-700, Slate-500 text, Zinc-50 background, Teal-600/Teal-700 accents) -->
+<!-- Application Structure Plan: The SPA uses a "Digital Learning Hub" dashboard approach. A sticky sidebar navigation allows quick jumping between the 6 core modules. The main content area is structured sequentially but utilizes interactive tabs, accordions, and a dynamic Hardy-Weinberg simulator to condense information and encourage active exploration rather than passive reading. This structure was chosen because genetic concepts are deeply interconnected but distinct; allowing users to jump between them while providing deep-dive interactive tools within sections aids retention and understanding. -->
+<!-- Visualization & Content Choices: 
+1. Classical Genetics -> Compare cross ratios -> HTML Table Toggle -> Interactive toggle between Monohybrid and Dihybrid squares. Justification: Prevents screen clutter while allowing direct comparison. Method: Vanilla JS DOM manipulation. NO SVG.
+2. Cell Division -> Compare Mitosis/Meiosis -> Tabbed Interface -> Clicking tabs swaps content. Justification: Side-by-side mental comparison without vertical scrolling. Method: JS class toggling. NO SVG.
+3. Molecular Genetics -> Process Flow -> CSS/HTML structured blocks -> Shows DNA -> RNA -> Protein. Justification: Visualizes the central dogma simply. Method: Tailwind flexbox and borders. NO SVG.
+4. Population Genetics -> Inform on Hardy-Weinberg principle -> Dynamic Doughnut Chart -> Slider alters 'p' and 'q', updating chart in real-time. Justification: Mathematical concepts are best understood by playing with the variables. Method: Chart.js Canvas. NO SVG/Mermaid. 
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<div class="flex flex-col md:flex-row min-h-screen">
+    <nav class="w-full md:w-64 bg-white border-r border-slate-200 shrink-0 md:h-screen md:sticky md:top-0 overflow-y-auto z-10">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                <span>🧬</span> GenHub
+            </h1>
+            <p class="text-xs text-slate-500 mt-1 uppercase tracking-wider font-semibold">Advanced Study Guide</p>
+        </div>
+        <ul class="flex flex-row md:flex-col overflow-x-auto md:overflow-hidden border-b md:border-b-0 border-slate-200 px-4 md:px-0" id="nav-menu">
+            <li><a href="#mod1" class="nav-link active block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">1. Classical Genetics</a></li>
+            <li><a href="#mod2" class="nav-link block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">2. Chromosomal Basis</a></li>
+            <li><a href="#mod3" class="nav-link block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">3. Molecular Genetics</a></li>
+            <li><a href="#mod4" class="nav-link block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">4. Mutation & Repair</a></li>
+            <li><a href="#mod5" class="nav-link block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">5. Population Genetics</a></li>
+            <li><a href="#mod6" class="nav-link block py-3 px-6 text-sm hover:bg-slate-50 text-slate-600 border-l-4 border-transparent whitespace-nowrap md:whitespace-normal">6. Genomics & Biotech</a></li>
+        </ul>
+    </nav>
+
+    <main class="flex-1 p-6 md:p-12 overflow-x-hidden" id="main-content">
+        <header class="max-w-4xl mb-12">
+            <h2 class="text-4xl font-extrabold text-slate-900 mb-4">Advanced General Genetics</h2>
+            <p class="text-lg text-slate-600 leading-relaxed">
+                A comprehensive, interactive exploration of genetic principles, from Mendelian inheritance and the molecular mechanisms of DNA replication to population dynamics and modern biotechnological applications.
+            </p>
+        </header>
+
+        <section id="mod1" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>📊</span> Module 1: Classical (Transmission) Genetics
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    This section introduces the foundational rules of inheritance discovered by Gregor Mendel. You will find interactive Punnett squares to visualize offspring probabilities, explore extensions beyond simple dominance, and understand how traits are mapped across generations using pedigrees. Interact with the cross views below to compare genetic ratios.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-3">Mendel's Three Laws</h4>
+                    <ul class="space-y-3 text-sm text-slate-600">
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-600 font-bold">1.</span>
+                            <span><strong>Law of Dominance:</strong> In a heterozygote, the dominant allele masks the recessive allele.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-600 font-bold">2.</span>
+                            <span><strong>Law of Segregation:</strong> Alleles of a locus segregate into separate gametes randomly.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-teal-600 font-bold">3.</span>
+                            <span><strong>Independent Assortment:</strong> Alleles of one gene sort independently of another (exception: linked genes).</span>
+                        </li>
+                    </ul>
+
+                    <h4 class="text-lg font-semibold text-slate-800 mt-6 mb-3">Probability Rules</h4>
+                    <div class="bg-slate-50 p-4 rounded-lg text-sm">
+                        <p class="mb-2"><strong>Product Rule (AND):</strong> Independent events occurring simultaneously (multiply probabilities).</p>
+                        <p><strong>Sum Rule (OR):</strong> Mutually exclusive events (add probabilities).</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-slate-800">Interactive Punnett Squares</h4>
+                        <div class="flex bg-slate-100 rounded-lg p-1">
+                            <button id="btn-mono" class="px-3 py-1 text-sm font-medium rounded-md bg-white text-teal-700 shadow-sm transition">Monohybrid</button>
+                            <button id="btn-di" class="px-3 py-1 text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 transition">Dihybrid</button>
+                        </div>
+                    </div>
+                    
+                    <div id="view-mono" class="flex-1 flex flex-col items-center justify-center">
+                        <p class="text-sm text-slate-500 mb-3 text-center">Cross: Aa &times; Aa</p>
+                        <table class="w-full text-center border-collapse">
+                            <thead>
+                                <tr>
+                                    <th class="p-2 border border-slate-300 bg-slate-50">Gametes</th>
+                                    <th class="p-2 border border-slate-300 bg-slate-100 text-teal-700 font-bold">A</th>
+                                    <th class="p-2 border border-slate-300 bg-slate-100 text-slate-600 font-bold">a</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th class="p-2 border border-slate-300 bg-slate-100 text-teal-700 font-bold">A</th>
+                                    <td class="p-4 border border-slate-300 font-bold bg-teal-50">AA</td>
+                                    <td class="p-4 border border-slate-300 font-bold bg-teal-50">Aa</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-2 border border-slate-300 bg-slate-100 text-slate-600 font-bold">a</th>
+                                    <td class="p-4 border border-slate-300 font-bold bg-teal-50">Aa</td>
+                                    <td class="p-4 border border-slate-300 font-bold bg-slate-50 text-slate-400">aa</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-4 text-center">
+                            <span class="inline-block bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-bold mr-2">Phenotype: 3:1</span>
+                            <span class="inline-block bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">Genotype: 1:2:1</span>
+                        </div>
+                    </div>
+
+                    <div id="view-di" class="hidden flex-1 flex flex-col items-center justify-center">
+                        <p class="text-sm text-slate-500 mb-3 text-center">Cross: AaBb &times; AaBb</p>
+                        <table class="w-full text-center border-collapse text-xs">
+                            <thead>
+                                <tr>
+                                    <th class="p-1 border border-slate-300 bg-slate-50"></th>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">AB</th>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">Ab</th>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">aB</th>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">ab</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">AB</th>
+                                    <td class="p-2 border border-slate-300 bg-teal-100 font-bold">AABB</td>
+                                    <td class="p-2 border border-slate-300 bg-teal-50">AABb</td>
+                                    <td class="p-2 border border-slate-300 bg-teal-50">AaBB</td>
+                                    <td class="p-2 border border-slate-300 bg-white">AaBb</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">Ab</th>
+                                    <td class="p-2 border border-slate-300 bg-teal-50">AABb</td>
+                                    <td class="p-2 border border-slate-300 bg-indigo-50">AAbb</td>
+                                    <td class="p-2 border border-slate-300 bg-white">AaBb</td>
+                                    <td class="p-2 border border-slate-300 bg-indigo-50">Aabb</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">aB</th>
+                                    <td class="p-2 border border-slate-300 bg-teal-50">AaBB</td>
+                                    <td class="p-2 border border-slate-300 bg-white">AaBb</td>
+                                    <td class="p-2 border border-slate-300 bg-amber-50">aaBB</td>
+                                    <td class="p-2 border border-slate-300 bg-amber-50">aaBb</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border border-slate-300 bg-slate-100">ab</th>
+                                    <td class="p-2 border border-slate-300 bg-white">AaBb</td>
+                                    <td class="p-2 border border-slate-300 bg-indigo-50">Aabb</td>
+                                    <td class="p-2 border border-slate-300 bg-amber-50">aaBb</td>
+                                    <td class="p-2 border border-slate-300 bg-slate-50 text-slate-400">aabb</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-4 flex flex-wrap justify-center gap-2">
+                            <span class="inline-block bg-teal-100 text-teal-800 px-2 py-1 rounded text-xs font-bold">9 A_B_</span>
+                            <span class="inline-block bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs font-bold">3 A_bb</span>
+                            <span class="inline-block bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-bold">3 aaB_</span>
+                            <span class="inline-block bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">1 aabb</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <h4 class="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Extensions of Mendelism</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <h5 class="font-bold text-teal-700 mb-2">Incomplete Dominance</h5>
+                        <p class="text-xs text-slate-600 mb-2">Blending of homozygous phenotypes. Heterozygote is intermediate.</p>
+                        <div class="bg-slate-50 p-2 rounded border border-slate-100 text-xs">
+                            <strong>Mirabilis Flowers:</strong><br>
+                            <span class="text-rose-500 font-bold">C<sup>R</sup>C<sup>R</sup> (Red)</span> &times; <span class="text-slate-400 font-bold">C<sup>W</sup>C<sup>W</sup> (White)</span><br>
+                            &rarr; 100% <span class="text-pink-500 font-bold">C<sup>R</sup>C<sup>W</sup> (Pink)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <h5 class="font-bold text-indigo-700 mb-2">Codominance</h5>
+                        <p class="text-xs text-slate-600 mb-2">Simultaneous expression of two alleles. No blending.</p>
+                        <ul class="space-y-2 text-xs">
+                            <li class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <strong>Cattle Coat:</strong> Red &times; White &rarr; <strong>Roan</strong> (both hairs present)
+                            </li>
+                            <li class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <strong>Horse Coat:</strong> Chestnut &times; Cremello &rarr; <strong>Palomino</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <h5 class="font-bold text-rose-700 mb-2">Multiple Alleles</h5>
+                        <p class="text-xs text-slate-600 mb-2">More than 2 allelic variations for a single gene.</p>
+                        <div class="bg-slate-50 p-2 rounded border border-slate-100 text-xs">
+                            <strong>ABO Blood Group:</strong><br>
+                            Determined by antigens.<br>
+                            I<sup>A</sup> and I<sup>B</sup> are codominant.<br>
+                            Both I<sup>A</sup> and I<sup>B</sup> are dominant over i.
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <h5 class="font-bold text-amber-700 mb-2">Epistasis</h5>
+                        <p class="text-xs text-slate-600 mb-2">One gene masks the expression of another (hypostatic) gene.</p>
+                        <ul class="space-y-2 text-xs">
+                            <li class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <strong>Recessive (9:3:4):</strong> Mice coat color (Black/Brown/Albino)
+                            </li>
+                            <li class="bg-slate-50 p-2 rounded border border-slate-100">
+                                <strong>Dominant (12:3:1):</strong> Squash fruit color (White/Yellow/Green)
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Sex-Related Inheritance</h4>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-100 p-3 border-b border-slate-200">
+                            <h5 class="font-bold text-slate-800">1. Sex-Linked (X-Linked)</h5>
+                            <p class="text-xs text-slate-600 mt-1">Linked to X chromosome. More common in males. Example: <strong>Color Blindness</strong>.</p>
+                        </div>
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="p-2 border-b">Genotype</th>
+                                    <th class="p-2 border-b">Female Phenotype</th>
+                                    <th class="p-2 border-b">Male Phenotype</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2 border-b font-mono text-slate-700">X X / X Y</td>
+                                    <td class="p-2 border-b">Normal</td>
+                                    <td class="p-2 border-b">Normal</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border-b font-mono text-slate-700">X<sup>c</sup> X</td>
+                                    <td class="p-2 border-b text-amber-600">Carrier</td>
+                                    <td class="p-2 border-b text-slate-400 italic">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-mono text-slate-700">X<sup>c</sup> X<sup>c</sup> / X<sup>c</sup> Y</td>
+                                    <td class="p-2 text-rose-600">Color-blind</td>
+                                    <td class="p-2 text-rose-600">Color-blind</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="p-3 text-[10px] text-slate-500 bg-slate-50 border-t">Y-Linked Example: Hypertrichosis pinnae auris (hairy ear) occurs only in males.</div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-100 p-3 border-b border-slate-200">
+                            <h5 class="font-bold text-slate-800">2. Sex-Influenced</h5>
+                            <p class="text-xs text-slate-600 mt-1">Autosomal genes. Expressed differently depending on sex. Example: <strong>Baldness</strong>.</p>
+                        </div>
+                        <table class="w-full text-xs text-left h-full">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="p-2 border-b">Genotype</th>
+                                    <th class="p-2 border-b">Female</th>
+                                    <th class="p-2 border-b">Male</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2 border-b font-mono text-slate-700">BB</td>
+                                    <td class="p-2 border-b font-semibold">Bald</td>
+                                    <td class="p-2 border-b font-semibold">Bald</td>
+                                </tr>
+                                <tr class="bg-teal-50">
+                                    <td class="p-2 border-b font-mono text-teal-800">Bb</td>
+                                    <td class="p-2 border-b text-teal-700">Non-bald</td>
+                                    <td class="p-2 border-b font-bold text-teal-700">Bald</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-mono text-slate-700">bb</td>
+                                    <td class="p-2">Non-bald</td>
+                                    <td class="p-2">Non-bald</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-100 p-3 border-b border-slate-200">
+                            <h5 class="font-bold text-slate-800">3. Sex-Limited</h5>
+                            <p class="text-xs text-slate-600 mt-1">Autosomal genes. Expressed in ONLY ONE sex. Example: <strong>Lactation</strong>.</p>
+                        </div>
+                        <table class="w-full text-xs text-left h-full">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="p-2 border-b">Genotype</th>
+                                    <th class="p-2 border-b">Female</th>
+                                    <th class="p-2 border-b">Male</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-indigo-50">
+                                    <td class="p-2 border-b font-mono text-indigo-800">RR</td>
+                                    <td class="p-2 border-b font-bold text-indigo-700">Lactating</td>
+                                    <td class="p-2 border-b text-indigo-700">Not lactating</td>
+                                </tr>
+                                <tr class="bg-indigo-50">
+                                    <td class="p-2 border-b font-mono text-indigo-800">Rr</td>
+                                    <td class="p-2 border-b font-bold text-indigo-700">Lactating</td>
+                                    <td class="p-2 border-b text-indigo-700">Not lactating</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-mono text-slate-700">rr</td>
+                                    <td class="p-2">Not lactating</td>
+                                    <td class="p-2">Not lactating</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="mod2" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>🔬</span> Module 2: The Chromosomal Basis
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    This module transitions from abstract alleles to physical chromosomes. Compare the processes of Mitosis and Meiosis using the tabs below to understand how genetic material is conserved in somatic cells versus reduced in gametes. Review how chromosomal linkage and structural abnormalities impact inheritance.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden">
+                <div class="flex border-b border-slate-200">
+                    <button class="flex-1 py-3 text-sm font-medium tab-active transition" id="tab-mitosis">Mitosis</button>
+                    <button class="flex-1 py-3 text-sm font-medium tab-inactive transition" id="tab-meiosis">Meiosis</button>
+                </div>
+                <div class="p-6">
+                    <div id="content-mitosis" class="block animate-fade-in">
+                        <h4 class="text-xl font-bold text-slate-800 mb-2">Equational Division</h4>
+                        <p class="text-slate-600 mb-4">Yields two genetically identical diploid (2n) somatic cells.</p>
+                        <div class="flex gap-4 items-center mb-2">
+                            <div class="w-12 h-12 rounded-full border-4 border-teal-500 flex items-center justify-center text-xs font-bold">2n</div>
+                            <span class="text-slate-400 text-lg">&rarr;</span>
+                            <div class="flex gap-2">
+                                <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-xs font-bold text-teal-800">2n</div>
+                                <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-xs font-bold text-teal-800">2n</div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-500">Focuses on organismal growth and tissue repair. No crossing over occurs.</p>
+                    </div>
+                    <div id="content-meiosis" class="hidden animate-fade-in">
+                        <h4 class="text-xl font-bold text-slate-800 mb-2">Reductional Division</h4>
+                        <p class="text-slate-600 mb-4">Yields four genetically distinct haploid (n) gametes. Essential for sexual reproduction.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-600">
+                            <div class="bg-slate-50 p-3 rounded border border-slate-100">
+                                <strong class="text-teal-700 block mb-1">Meiosis I</strong>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><strong>Prophase I:</strong> Crossing over (homologous recombination) at chiasmata generates diversity.</li>
+                                    <li><strong>Anaphase I:</strong> Homologous chromosomes separate.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded border border-slate-100">
+                                <strong class="text-teal-700 block mb-1">Meiosis II</strong>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li>Similar to mitosis.</li>
+                                    <li><strong>Anaphase II:</strong> Sister chromatids separate.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-3 flex justify-between items-center">
+                        Linkage & Mapping
+                        <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded">Math</span>
+                    </h4>
+                    <p class="text-sm text-slate-600 mb-4">Genes on the same chromosome tend to be inherited together. Recombination Frequency (RF) measures the distance between them.</p>
+                    <div class="bg-teal-50 text-teal-900 p-3 rounded-md font-mono text-center text-sm mb-3 border border-teal-100">
+                        RF = (Recombinants / Total Offspring) &times; 100
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-1">
+                        <li>1% RF = 1 Map Unit / CentiMorgan (cM).</li>
+                        <li>Max measurable RF is 50% (appears unlinked).</li>
+                        <li><strong>Three-Point Testcross:</strong> Identifies double crossovers to determine gene order.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-3">Chromosomal Abnormalities</h4>
+                    <div class="space-y-3">
+                        <div class="border-l-2 border-amber-400 pl-3">
+                            <strong class="text-sm text-slate-800">Aneuploidy vs Polyploidy</strong>
+                            <p class="text-xs text-slate-600 mt-1">Aneuploidy: Abnormal number (e.g., Trisomy 21). Polyploidy: Extra complete sets (3n, 4n).</p>
+                        </div>
+                        <div class="border-l-2 border-rose-400 pl-3">
+                            <strong class="text-sm text-slate-800">Structural Aberrations</strong>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="bg-rose-50 text-rose-700 text-[10px] uppercase px-2 py-0.5 rounded font-bold">Deletion</span>
+                                <span class="bg-rose-50 text-rose-700 text-[10px] uppercase px-2 py-0.5 rounded font-bold">Duplication</span>
+                                <span class="bg-rose-50 text-rose-700 text-[10px] uppercase px-2 py-0.5 rounded font-bold">Inversion</span>
+                                <span class="bg-rose-50 text-rose-700 text-[10px] uppercase px-2 py-0.5 rounded font-bold">Translocation</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mod3" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>🧬</span> Module 3: Molecular Genetics
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    Explore the chemical basis of heredity. This section contrasts ancestral (prokaryotic) DNA replication with eukaryotic models, visualizes the Central Dogma (flow of information), and outlines the mechanisms of gene expression regulation, including operons and epigenetics.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1">
+                    <h4 class="font-semibold text-slate-800 mb-4">DNA Structure</h4>
+                    <div class="text-sm text-slate-600 space-y-3">
+                        <p>Double helix, antiparallel strands (5' &rarr; 3' and 3' &rarr; 5').</p>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center bg-slate-50 p-2 rounded">
+                                <span class="font-bold text-blue-600">A</span>
+                                <span class="text-xs text-slate-400">2 H-Bonds</span>
+                                <span class="font-bold text-blue-600">T</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-slate-50 p-2 rounded">
+                                <span class="font-bold text-green-600">G</span>
+                                <span class="text-xs text-slate-400">3 H-Bonds</span>
+                                <span class="font-bold text-green-600">C</span>
+                            </div>
+                        </div>
+                        <p class="text-xs mt-4">Nucleotides consist of a phosphate, deoxyribose sugar, and a nitrogenous base.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <h4 class="font-semibold text-slate-800 mb-4">Replication: Prokaryotic vs Eukaryotic</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                        <div>
+                            <strong class="text-teal-700 border-b border-teal-100 block pb-1 mb-2">Ancestral Bacterial (Prokaryotic)</strong>
+                            <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                                <li>Single origin of replication (<em>oriC</em>).</li>
+                                <li><strong>Theta (&theta;) Replication:</strong> Bidirectional around circular chromosome.</li>
+                                <li>DNA Pol III is main synthesizer.</li>
+                                <li>Ends at <em>ter</em> region, resolving catenanes via Topoisomerase IV.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <strong class="text-indigo-700 border-b border-indigo-100 block pb-1 mb-2">Eukaryotic Contrast</strong>
+                            <ul class="list-disc pl-4 space-y-1 text-slate-600">
+                                <li>Multiple origins of replication.</li>
+                                <li>Linear chromosomes.</li>
+                                <li>Requires <strong>telomerase</strong> to replicate ends and prevent shortening.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 text-white p-6 rounded-xl shadow-md mb-6 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 text-9xl text-slate-700 opacity-20">⚙️</div>
+                <h4 class="text-xl font-bold mb-6 text-teal-300 relative z-10">The Central Dogma</h4>
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10 text-center">
+                    
+                    <div class="bg-slate-700 p-4 rounded-lg w-full md:w-1/3 border border-slate-600 shadow-inner">
+                        <strong class="block text-lg text-white mb-1">DNA</strong>
+                        <span class="text-xs text-slate-300 block mb-2">Information Storage</span>
+                        <div class="text-[10px] text-teal-200 uppercase tracking-widest border-t border-slate-500 pt-2 mt-2">Replication</div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                        <span class="text-teal-400 font-bold text-sm mb-1">Transcription</span>
+                        <span class="text-2xl text-slate-400">&rarr;</span>
+                        <span class="text-[10px] text-slate-400 mt-1 max-w-[80px]">RNA Pol</span>
+                    </div>
+
+                    <div class="bg-slate-700 p-4 rounded-lg w-full md:w-1/3 border border-slate-600 shadow-inner">
+                        <strong class="block text-lg text-white mb-1">mRNA</strong>
+                        <span class="text-xs text-slate-300 block mb-2">Messenger</span>
+                        <div class="text-[10px] text-teal-200 uppercase tracking-widest border-t border-slate-500 pt-2 mt-2">Processing (Euk)</div>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <span class="text-teal-400 font-bold text-sm mb-1">Translation</span>
+                        <span class="text-2xl text-slate-400">&rarr;</span>
+                        <span class="text-[10px] text-slate-400 mt-1 max-w-[80px]">Ribosome</span>
+                    </div>
+
+                    <div class="bg-slate-700 p-4 rounded-lg w-full md:w-1/3 border border-slate-600 shadow-inner">
+                        <strong class="block text-lg text-white mb-1">Protein</strong>
+                        <span class="text-xs text-slate-300 block mb-2">Functional Molecule</span>
+                        <div class="text-[10px] text-teal-200 uppercase tracking-widest border-t border-slate-500 pt-2 mt-2">Folding</div>
+                    </div>
+
+                </div>
+                <div class="mt-6 bg-slate-900/50 p-3 rounded text-xs text-slate-300 relative z-10 border border-slate-700">
+                    <strong class="text-amber-400">Exception:</strong> Retroviruses use Reverse Transcriptase (RNA &rarr; DNA).<br>
+                    <strong class="text-teal-400">Coupling:</strong> In bacteria, transcription and translation happen simultaneously (polycistronic). Eukaryotes separate them (nucleus vs cytoplasm) and have monocistronic mRNA.
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h4 class="font-semibold text-slate-800 mb-3">Regulation of Gene Expression</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
+                    <div class="border border-slate-100 p-3 rounded bg-slate-50">
+                        <strong class="block text-slate-800 mb-2">Prokaryotic (Operons)</strong>
+                        <p class="mb-1"><span class="bg-teal-100 text-teal-800 px-1 rounded font-mono text-xs">Lac Operon</span> Inducible. Usually OFF. Lactose binds repressor to turn ON.</p>
+                        <p><span class="bg-rose-100 text-rose-800 px-1 rounded font-mono text-xs">Trp Operon</span> Repressible. Usually ON. Tryptophan binds repressor to turn OFF.</p>
+                    </div>
+                    <div class="border border-slate-100 p-3 rounded bg-slate-50">
+                        <strong class="block text-slate-800 mb-2">Eukaryotic</strong>
+                        <ul class="list-disc pl-4 space-y-1">
+                            <li><strong>Epigenetics:</strong> DNA methylation (silences), Histone acetylation (opens/activates).</li>
+                            <li><strong>Transcription Factors:</strong> Bind enhancers/silencers.</li>
+                            <li><strong>Post-transcriptional:</strong> miRNA and siRNA cause RNA interference.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mod4" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>⚠️</span> Module 4: Mutation and DNA Repair
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    Review the types of errors that can occur in the genetic code and the cellular mechanisms designed to fix them. Click to expand each category for specific mechanisms and consequences.
+                </p>
+            </div>
+
+            <div class="space-y-3" id="mutation-accordion">
+                <div class="border border-slate-200 rounded-lg bg-white overflow-hidden accordion-item">
+                    <button class="w-full px-6 py-4 text-left font-semibold text-slate-800 flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        Types of Point Mutations
+                        <span class="accordion-icon transition-transform text-slate-400">▼</span>
+                    </button>
+                    <div class="accordion-content bg-slate-50 px-6">
+                        <div class="pb-4 text-sm text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 pt-3 mt-1">
+                            <div>
+                                <strong class="text-slate-800">By Base Change:</strong>
+                                <ul class="list-disc pl-4 mt-1 space-y-1">
+                                    <li><strong>Transitions:</strong> Purine to Purine (A&harr;G) or Pyrimidine to Pyrimidine (C&harr;T).</li>
+                                    <li><strong>Transversions:</strong> Purine to Pyrimidine or vice versa.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-slate-800">Functional Consequence:</strong>
+                                <ul class="list-disc pl-4 mt-1 space-y-1">
+                                    <li><span class="bg-slate-200 px-1 rounded">Silent</span> Changes codon, same amino acid.</li>
+                                    <li><span class="bg-amber-200 px-1 rounded">Missense</span> Changes amino acid (e.g., sickle cell).</li>
+                                    <li><span class="bg-rose-200 px-1 rounded text-rose-900">Nonsense</span> Creates premature stop codon.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-slate-200 rounded-lg bg-white overflow-hidden accordion-item">
+                    <button class="w-full px-6 py-4 text-left font-semibold text-slate-800 flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        Frameshifts & Causes
+                        <span class="accordion-icon transition-transform text-slate-400">▼</span>
+                    </button>
+                    <div class="accordion-content bg-slate-50 px-6">
+                        <div class="pb-4 text-sm text-slate-600 border-t border-slate-200 pt-3 mt-1 space-y-3">
+                            <p><strong>Frameshift Mutations:</strong> Insertions or deletions (indels) of base pairs not in multiples of 3. This alters the entire downstream reading frame, usually resulting in a non-functional protein.</p>
+                            <p><strong>Spontaneous vs. Induced:</strong> Spontaneous mutations arise from natural processes like tautomeric shifts or replication errors. Induced mutations are caused by mutagens (UV light, X-rays, intercalating agents).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-slate-200 rounded-lg bg-white overflow-hidden accordion-item">
+                    <button class="w-full px-6 py-4 text-left font-semibold text-slate-800 flex justify-between items-center hover:bg-slate-50 transition" onclick="toggleAccordion(this)">
+                        DNA Repair Mechanisms
+                        <span class="accordion-icon transition-transform text-slate-400">▼</span>
+                    </button>
+                    <div class="accordion-content bg-slate-50 px-6">
+                        <div class="pb-4 text-sm text-slate-600 border-t border-slate-200 pt-3 mt-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <strong class="text-slate-800 block mb-1">Single-Strand Repair</strong>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><strong>Mismatch Repair (MMR):</strong> Fixes replication errors immediately. Detects daughter strand via lack of methylation (in prokaryotes).</li>
+                                    <li><strong>Base Excision Repair (BER):</strong> Removes small, non-helix-distorting lesions using DNA glycosylases.</li>
+                                    <li><strong>Nucleotide Excision Repair (NER):</strong> Repairs bulky lesions (e.g., UV thymine dimers).</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong class="text-slate-800 block mb-1">Double-Strand Break Repair</strong>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><strong>Non-Homologous End Joining (NHEJ):</strong> Error-prone, glues ends back together without a template.</li>
+                                    <li><strong>Homologous Recombination (HR):</strong> Error-free, uses sister chromatid as a template for precise repair.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mod5" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>🌐</span> Module 5: Population & Quantitative Genetics
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    Shift focus from individuals to populations. The interactive Hardy-Weinberg simulator below demonstrates how allele frequencies ($p$ and $q$) mathematically determine the distribution of genotypes in a population assumed to be in equilibrium. 
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8 flex flex-col lg:flex-row gap-8 items-center">
+                <div class="w-full lg:w-1/2">
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">Hardy-Weinberg Simulator</h4>
+                    <p class="text-sm text-slate-500 mb-6">Assumes no mutation, random mating, infinite size, no gene flow, and no selection.</p>
+                    
+                    <div class="mb-6">
+                        <label for="p-slider" class="block text-sm font-medium text-slate-700 mb-2">
+                            Dominant Allele Freq. (<span class="text-teal-600 font-bold italic">p</span>): <span id="p-val" class="font-mono bg-slate-100 px-2 py-1 rounded">0.50</span>
+                        </label>
+                        <input type="range" id="p-slider" min="0" max="1" step="0.01" value="0.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600">
+                    </div>
+                    
+                    <div class="mb-6 opacity-70">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">
+                            Recessive Allele Freq. (<span class="text-indigo-600 font-bold italic">q</span> = 1 - p): <span id="q-val" class="font-mono bg-slate-100 px-2 py-1 rounded">0.50</span>
+                        </label>
+                    </div>
+
+                    <div class="bg-slate-50 rounded p-4 border border-slate-200 text-center font-mono text-sm shadow-inner">
+                        p&sup2; + 2pq + q&sup2; = 1
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-1/2 flex justify-center">
+                    <div class="chart-container">
+                        <canvas id="hwChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-3">Evolutionary Forces</h4>
+                    <p class="text-sm text-slate-600 mb-3">Forces that violate H-W equilibrium and cause evolution:</p>
+                    <ul class="text-sm text-slate-600 space-y-2">
+                        <li><strong>Genetic Drift:</strong> Random fluctuations (Bottleneck, Founder effect). Strongest in small populations.</li>
+                        <li><strong>Gene Flow:</strong> Migration of alleles between populations.</li>
+                        <li><strong>Natural Selection:</strong> Differential survival (Directional, Stabilizing, Disruptive).</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-3">Quantitative Genetics</h4>
+                    <div class="text-sm text-slate-600 space-y-3">
+                        <p>Analyzes complex, continuous traits.</p>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono border border-slate-100 text-center">
+                            Phenotypic Variance: V<sub>P</sub> = V<sub>G</sub> + V<sub>E</sub> + V<sub>G&times;E</sub>
+                        </div>
+                        <div>
+                            <strong>Heritability:</strong>
+                            <ul class="list-disc pl-4 mt-1">
+                                <li>Broad-sense (H&sup2;): V<sub>G</sub> / V<sub>P</sub></li>
+                                <li>Narrow-sense (h&sup2;): V<sub>A</sub> / V<sub>P</sub> (Additive only; determines response to selection).</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded text-xs font-mono border border-slate-100 text-center">
+                            Response to Selection: R = h&sup2; &times; S
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mod6" class="max-w-5xl mb-20 scroll-mt-10">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-teal-800 border-b-2 border-teal-100 pb-2 flex items-center gap-2">
+                    <span>🧪</span> Module 6: Genomics & Advanced Biotech
+                </h3>
+                <p class="mt-4 text-slate-600">
+                    The final module covers modern applications of genetic knowledge. This includes manipulating DNA in the lab, amplifying sequences, sequencing entire genomes, and cutting-edge gene-editing technologies.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                    <h4 class="font-bold text-slate-800 mb-2">Recombinant DNA</h4>
+                    <p class="text-sm text-slate-600">Joining DNA from different sources. Utilizes restriction enzymes (endonucleases) to cut, and DNA ligase to paste. Plasmids are often used as vectors.</p>
+                </div>
+                
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                    <h4 class="font-bold text-slate-800 mb-2">PCR (Polymerase Chain Reaction)</h4>
+                    <p class="text-sm text-slate-600 mb-2">Amplifies specific DNA sequences. Steps:</p>
+                    <ol class="text-xs text-slate-500 list-decimal pl-4">
+                        <li>Denaturation (95&deg;C)</li>
+                        <li>Annealing (50-65&deg;C)</li>
+                        <li>Extension (72&deg;C using Taq)</li>
+                    </ol>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                    <h4 class="font-bold text-slate-800 mb-2">Sequencing</h4>
+                    <ul class="text-sm text-slate-600 space-y-2">
+                        <li><strong>Sanger:</strong> Uses chain-terminating dideoxynucleotides (ddNTPs).</li>
+                        <li><strong>NGS (Next-Gen):</strong> High-throughput, massively parallel sequencing (e.g., Illumina).</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-800 text-white p-5 rounded-xl shadow-md border border-slate-700 lg:col-span-2">
+                    <h4 class="font-bold text-teal-300 mb-2">CRISPR-Cas9</h4>
+                    <p class="text-sm text-slate-300">Revolutionary gene-editing tool derived from bacterial immune systems. Uses a guide RNA (gRNA) to direct the Cas9 nuclease to a specific genomic location to induce a double-strand break. This break is then repaired by the cell to either knock out or precisely knock in genes.</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition">
+                    <h4 class="font-bold text-slate-800 mb-2">The "Omics"</h4>
+                    <ul class="text-sm text-slate-600 space-y-1">
+                        <li><strong>Genomics:</strong> Whole genomes.</li>
+                        <li><strong>Transcriptomics:</strong> All RNA transcripts (RNA-Seq, Microarrays).</li>
+                        <li><strong>Proteomics:</strong> All expressed proteins.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-12 py-6 border-t border-slate-200 text-center text-sm text-slate-500">
+            Designed to translate comprehensive genetic principles into an intuitive, interactive learning experience.
+        </footer>
+    </main>
+</div>
+
+<script>
+    // Navigation Highlighting on Scroll
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= (sectionTop - 150)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Module 1: Punnett Square Toggle
+    const btnMono = document.getElementById('btn-mono');
+    const btnDi = document.getElementById('btn-di');
+    const viewMono = document.getElementById('view-mono');
+    const viewDi = document.getElementById('view-di');
+
+    btnMono.addEventListener('click', () => {
+        viewMono.classList.remove('hidden');
+        viewDi.classList.add('hidden');
+        btnMono.classList.replace('text-slate-500', 'text-teal-700');
+        btnMono.classList.replace('hover:text-slate-700', 'bg-white');
+        btnMono.classList.add('shadow-sm');
+        btnDi.classList.replace('text-teal-700', 'text-slate-500');
+        btnDi.classList.replace('bg-white', 'hover:text-slate-700');
+        btnDi.classList.remove('shadow-sm');
+    });
+
+    btnDi.addEventListener('click', () => {
+        viewDi.classList.remove('hidden');
+        viewMono.classList.add('hidden');
+        btnDi.classList.replace('text-slate-500', 'text-teal-700');
+        btnDi.classList.replace('hover:text-slate-700', 'bg-white');
+        btnDi.classList.add('shadow-sm');
+        btnMono.classList.replace('text-teal-700', 'text-slate-500');
+        btnMono.classList.replace('bg-white', 'hover:text-slate-700');
+        btnMono.classList.remove('shadow-sm');
+    });
+
+    // Module 2: Mitosis / Meiosis Tabs
+    const tabMitosis = document.getElementById('tab-mitosis');
+    const tabMeiosis = document.getElementById('tab-meiosis');
+    const contentMitosis = document.getElementById('content-mitosis');
+    const contentMeiosis = document.getElementById('content-meiosis');
+
+    tabMitosis.addEventListener('click', () => {
+        tabMitosis.classList.replace('tab-inactive', 'tab-active');
+        tabMeiosis.classList.replace('tab-active', 'tab-inactive');
+        contentMitosis.classList.remove('hidden');
+        contentMeiosis.classList.add('hidden');
+    });
+
+    tabMeiosis.addEventListener('click', () => {
+        tabMeiosis.classList.replace('tab-inactive', 'tab-active');
+        tabMitosis.classList.replace('tab-active', 'tab-inactive');
+        contentMeiosis.classList.remove('hidden');
+        contentMitosis.classList.add('hidden');
+    });
+
+    // Module 4: Accordion
+    function toggleAccordion(button) {
+        const item = button.parentElement;
+        item.classList.toggle('accordion-active');
+    }
+
+    // Module 5: Hardy-Weinberg Chart.js Implementation
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('hwChart').getContext('2d');
+        
+        let p = 0.5;
+        let q = 0.5;
+        let p2 = p * p;
+        let pq2 = 2 * p * q;
+        let q2 = q * q;
+
+        const hwChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Homoz. Dominant (p²)', 'Heterozygous (2pq)', 'Homoz. Recessive (q²)'],
+                datasets: [{
+                    data: [p2, pq2, q2],
+                    backgroundColor: [
+                        '#0f766e', // teal-700
+                        '#94a3b8', // slate-400
+                        '#4f46e5'  // indigo-600
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                family: "'Inter', sans-serif",
+                                size: 12
+                            },
+                            color: '#475569'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += (context.parsed * 100).toFixed(1) + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
+            }
+        });
+
+        // Slider Logic
+        const pSlider = document.getElementById('p-slider');
+        const pValDisplay = document.getElementById('p-val');
+        const qValDisplay = document.getElementById('q-val');
+
+        pSlider.addEventListener('input', (e) => {
+            p = parseFloat(e.target.value);
+            q = 1 - p;
+            
+            pValDisplay.innerText = p.toFixed(2);
+            qValDisplay.innerText = q.toFixed(2);
+
+            // Update chart data
+            hwChart.data.datasets[0].data = [p * p, 2 * p * q, q * q];
+            hwChart.update();
+        });
+    });
+</script>
+</body>
+</html>

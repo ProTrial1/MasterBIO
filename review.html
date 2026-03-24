@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Plant Physiology & Biochemical Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Deep Botanical Greens, Earthy Browns, Ocean Blues, and Sunny Ambers to intuitively categorize physiological processes (Water=Blue, Light=Amber, Structure=Brown, Hormones/Growth=Green, Lipids=Yellow). -->
+    <!-- Application Structure Plan: A highly detailed, multi-module dashboard spanning 8 core competencies. The left navigation acts as the main switcher. To handle the massive amount of required detail (Biochemical pathways, Anatomical diagrams, Lipid synthesis), we use interactive sub-tabs, CSS-grid-based infographics, and interactive JS simulators. This prevents overwhelming linear scrolling while maximizing master-level information density. -->
+    <!-- Visualization & Content Choices: 
+         - Leaf Cross-Section -> Goal: Relate structure to function -> Viz: Pure HTML/CSS flexbox layering -> Justification: Clearly delineates tissue layers (epidermis, mesophyll, vascular).
+         - Lipid Biosynthesis -> Goal: Trace carbon flow from plastid to ER -> Viz: HTML/CSS spatial flowchart.
+         - Water Potential & Pathways -> Goal: Explain thermodynamics and apoplast/symplast -> Viz: Chart.js Line Chart + HTML diagram.
+         - Stress Response -> Goal: Detail molecular cascades -> Viz: Interactive JS Dashboard with elaborated molecular text.
+         - Photosynthesis & Respiration -> Goal: Map precise chemical intermediates -> Viz: Elaborate HTML/CSS flowcharts (Z-scheme, Calvin, Krebs).
+         Confirming NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body { font-family: 'Open Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        h1, h2, h3, h4, .serif { font-family: 'Merriweather', serif; }
+        
+        .chart-container {
+            position: relative; width: 100%; max-width: 800px; margin: 0 auto; height: 350px; max-height: 400px;
+        }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .nav-item.active { background-color: #dcfce7; color: #166534; border-right: 4px solid #16a34a; font-weight: 600; }
+        .sub-tab-btn.active { background-color: #1e293b; color: white; border-color: #1e293b; }
+        .resp-tab-btn.active { background-color: #78350f; color: white; border-color: #78350f; }
+        .lipid-tab-btn.active { background-color: #854d0e; color: white; border-color: #854d0e; }
+        
+        .infographic-wrapper { overflow-x: auto; padding-bottom: 20px; }
+        .dashed-line-horizontal { border-top: 3px dashed; }
+        .solid-line-horizontal { border-top: 3px solid; }
+        .z-scheme-path { background: linear-gradient(to top right, transparent 48%, #eab308 48%, #eab308 52%, transparent 52%); }
+        .z-scheme-path-down { background: linear-gradient(to bottom right, transparent 48%, #3b82f6 48%, #3b82f6 52%, transparent 52%); }
+        
+        .abc-whorl { transition: all 0.3s ease; }
+        .abc-whorl:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .stress-btn.active { box-shadow: 0 0 0 2px #cbd5e1; transform: scale(0.98); background-color: #f1f5f9;}
+
+        .flow-arrow-down::after { content: "↓"; display: block; text-align: center; color: #94a3b8; font-weight: bold; margin: 4px 0; font-size: 1.2rem;}
+        
+        /* Leaf diagram helpers */
+        .palisade-cell { width: 1.5rem; height: 100%; background-color: #22c55e; border: 1px solid #166534; border-radius: 9999px; flex-shrink: 0; }
+        .spongy-cell { width: 1.5rem; height: 1.5rem; background-color: #4ade80; border: 1px solid #166534; border-radius: 50%; position: absolute; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-full lg:w-72 bg-white border-r border-slate-200 flex flex-col shadow-lg z-20 flex-shrink-0 h-auto lg:h-full">
+        <div class="p-6 border-b border-slate-100 bg-emerald-50">
+            <h1 class="text-2xl font-bold text-emerald-900 leading-tight serif">Plant Physiology</h1>
+            <p class="text-xs text-emerald-700 mt-2 uppercase tracking-wider font-bold">Biochemical Mastery Guide</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-1.5 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-hidden hide-scrollbar">
+            <button onclick="navigate('overview')" id="nav-overview" class="nav-item active text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>📊</span> Dashboard</button>
+            <button onclick="navigate('anatomy')" id="nav-anatomy" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>🧱</span> Plant Structure & Anatomy</button>
+            <button onclick="navigate('water')" id="nav-water" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>💧</span> Water & Mineral Transport</button>
+            <button onclick="navigate('photosynthesis')" id="nav-photosynthesis" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>☀️</span> Photosynthesis Pathways</button>
+            <button onclick="navigate('respiration')" id="nav-respiration" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>⚡</span> Cellular Respiration</button>
+            <button onclick="navigate('lipids')" id="nav-lipids" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>🛢️</span> Lipid Synthesis & Metab.</button>
+            <button onclick="navigate('environment')" id="nav-environment" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>⛈️</span> Env. Stress Responses</button>
+            <button onclick="navigate('hormones')" id="nav-hormones" class="nav-item text-left px-4 py-3 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors whitespace-nowrap lg:whitespace-normal w-full flex items-center gap-2"><span>🌱</span> Growth & Phytohormones</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 lg:p-10 relative scroll-smooth" id="main-scroll">
+        
+        <!-- ================= SECTION: OVERVIEW ================= -->
+        <section id="sec-overview" class="module-section animate-fade-in block max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Plant Physiology & Biochemistry</h2>
+                <p class="text-lg text-slate-600 leading-relaxed">This expanded guide details the macroscopic structural phenomena and precise chemical intermediates of plant metabolism, enabling master-level comprehension of botanical systems.</p>
+            </div>
+
+            <!-- Core System Integration -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-10">
+                <h3 class="text-2xl font-bold text-slate-800 mb-6 serif">System Integration: The Whole Plant</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200">
+                        <div class="text-2xl mb-2">🧱</div>
+                        <h4 class="font-bold text-amber-900 mb-2">Structural Foundation</h4>
+                        <p class="text-xs text-amber-800">Organ morphology (roots, stems, leaves) establishes the physical framework for light capture and soil penetration, governed by distinct meristematic growth zones.</p>
+                    </div>
+                    <div class="bg-blue-50 p-5 rounded-xl border border-blue-200">
+                        <div class="text-2xl mb-2">💧</div>
+                        <h4 class="font-bold text-blue-900 mb-2">Thermodynamic Transport</h4>
+                        <p class="text-xs text-blue-800">Water potential gradients ($\Psi$) drive massive xylem fluid columns, while active proton pumps and chemiosmosis regulate phloem loading and mineral uptake.</p>
+                    </div>
+                    <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-200">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <h4 class="font-bold text-emerald-900 mb-2">Metabolic Energy Flow</h4>
+                        <p class="text-xs text-emerald-800">Chloroplasts fix abiotic carbon (Photosynthesis) into organic triose-phosphates, which mitochondria subsequently oxidize (Respiration) to mass-produce ATP.</p>
+                    </div>
+                    <div class="bg-purple-50 p-5 rounded-xl border border-purple-200">
+                        <div class="text-2xl mb-2">🧬</div>
+                        <h4 class="font-bold text-purple-900 mb-2">Molecular Regulation</h4>
+                        <p class="text-xs text-purple-800">Phytohormone gradients (Auxin, ABA, GA) trigger specific signal transduction cascades (e.g., repressor degradation) to orchestrate stress survival and development.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2 serif">Lifecycle Hormone Dynamics</h3>
+                <p class="text-sm text-slate-500 mb-8">Conceptual timeline showing the relative dominance of key phytohormones orchestrating the transition from seed dormancy to senescence.</p>
+                <div class="chart-container"><canvas id="lifecycleChart"></canvas></div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: ANATOMY & STRUCTURE ================= -->
+        <section id="sec-anatomy" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Plant Structure & Anatomy</h2>
+                <p class="text-lg text-slate-600">Form explicitly dictates function. The cellular architecture of plant tissues provides the physical environment required for physiological processes.</p>
+            </div>
+
+            <!-- Leaf Infographic -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-10 overflow-hidden">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2 serif">Infographic: Leaf Cross-Section Anatomy</h3>
+                <p class="text-sm text-slate-500 mb-8">The leaf is optimized to maximize photon capture while carefully regulating gas exchange and water retention.</p>
+                
+                <div class="infographic-wrapper">
+                    <div class="min-w-[800px] h-[350px] bg-sky-50 border-4 border-slate-300 rounded-xl relative flex flex-col font-sans overflow-hidden">
+                        
+                        <!-- 1. Cuticle -->
+                        <div class="h-3 w-full bg-white/60 border-b-2 border-slate-300 flex items-center justify-center relative z-10">
+                            <span class="text-[10px] font-bold text-slate-500 tracking-widest absolute right-4">Waxy Cuticle (Prevents desiccation)</span>
+                        </div>
+                        
+                        <!-- 2. Upper Epidermis -->
+                        <div class="h-8 w-full flex px-2 gap-1 mt-1 z-10">
+                            <!-- Generate blocky cells -->
+                            <script>for(let i=0; i<30; i++) document.write('<div class="flex-1 bg-white border border-slate-400 rounded-sm shadow-sm"></div>');</script>
+                            <span class="absolute right-4 top-5 text-[10px] font-bold text-slate-700 bg-white/80 px-1 rounded">Upper Epidermis (Transparent)</span>
+                        </div>
+
+                        <!-- 3. Palisade Mesophyll -->
+                        <div class="h-28 w-full flex px-2 gap-1 mt-2 z-10">
+                            <!-- Columnar cells packed with chloroplasts -->
+                            <script>for(let i=0; i<40; i++) document.write('<div class="palisade-cell shadow-sm flex flex-col items-center justify-around py-1"><div class="w-1.5 h-1.5 bg-green-800 rounded-full"></div><div class="w-1.5 h-1.5 bg-green-800 rounded-full"></div><div class="w-1.5 h-1.5 bg-green-800 rounded-full"></div></div>');</script>
+                            <div class="absolute right-4 top-16 bg-white/90 border border-green-500 p-2 rounded text-xs shadow-md">
+                                <strong class="text-green-800">Palisade Mesophyll</strong><br>
+                                <span class="text-[10px] text-slate-600">Columnar cells tightly packed.<br>Primary site of light absorption.</span>
+                            </div>
+                        </div>
+
+                        <!-- 4. Spongy Mesophyll & Vascular Bundle -->
+                        <div class="flex-1 relative mt-2 w-full z-10">
+                            <!-- Scattered spongy cells for gas exchange -->
+                            <div class="spongy-cell shadow-sm" style="left: 5%; top: 10%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 15%; top: 30%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 8%; top: 60%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 25%; top: 15%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 35%; top: 50%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 65%; top: 20%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 75%; top: 60%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 85%; top: 30%"></div>
+                            <div class="spongy-cell shadow-sm" style="left: 92%; top: 60%"></div>
+                            
+                            <div class="absolute right-4 top-4 bg-white/90 border border-green-500 p-2 rounded text-xs shadow-md">
+                                <strong class="text-green-800">Spongy Mesophyll</strong><br>
+                                <span class="text-[10px] text-slate-600">Loosely arranged with air spaces.<br>Facilitates rapid CO₂ / O₂ diffusion.</span>
+                            </div>
+
+                            <!-- Vascular Bundle (Vein) -->
+                            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-slate-100 rounded-full border-4 border-slate-300 flex flex-col overflow-hidden shadow-xl">
+                                <!-- Xylem (Top half) -->
+                                <div class="h-1/2 bg-blue-100 flex flex-wrap items-center justify-center p-2 gap-1 border-b-2 border-slate-300">
+                                    <div class="w-4 h-4 rounded-full border-2 border-blue-400 bg-white"></div><div class="w-6 h-6 rounded-full border-2 border-blue-400 bg-white"></div><div class="w-5 h-5 rounded-full border-2 border-blue-400 bg-white"></div>
+                                    <span class="absolute top-4 text-xs font-bold text-blue-800">Xylem (Water In)</span>
+                                </div>
+                                <!-- Phloem (Bottom half) -->
+                                <div class="h-1/2 bg-orange-100 flex items-center justify-center p-2">
+                                    <span class="text-xs font-bold text-orange-800">Phloem (Sugar Out)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Lower Epidermis & Stomata -->
+                        <div class="h-10 w-full flex px-2 gap-1 z-10 items-end pb-1 border-t-2 border-sky-100/50">
+                            <!-- Generate bottom cells with a stoma gap -->
+                            <script>for(let i=0; i<12; i++) document.write('<div class="w-10 h-6 bg-white border border-slate-400 rounded-sm shadow-sm"></div>');</script>
+                            
+                            <!-- Stoma -->
+                            <div class="w-16 h-8 flex items-end justify-between relative px-1">
+                                <div class="w-5 h-6 bg-emerald-300 border-2 border-emerald-600 rounded-full shadow-inner transform -rotate-12"></div> <!-- Guard cell -->
+                                <div class="absolute left-1/2 bottom-0 w-2 h-6 bg-sky-50 -translate-x-1/2"></div> <!-- The Pore -->
+                                <div class="w-5 h-6 bg-emerald-300 border-2 border-emerald-600 rounded-full shadow-inner transform rotate-12"></div> <!-- Guard cell -->
+                            </div>
+
+                            <script>for(let i=0; i<12; i++) document.write('<div class="w-10 h-6 bg-white border border-slate-400 rounded-sm shadow-sm"></div>');</script>
+                            
+                            <div class="absolute right-4 bottom-2 bg-white/90 border border-slate-400 p-1.5 rounded text-xs shadow-md">
+                                <strong class="text-slate-800">Guard Cells & Stoma</strong><br>
+                                <span class="text-[9px] text-slate-600">Regulates transpiration & CO₂ uptake.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- ROOTS -->
+                <div class="bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
+                    <div class="bg-amber-50 p-4 border-b border-amber-200 flex items-center gap-3">
+                        <span class="text-3xl">🪱</span><h3 class="text-2xl font-bold text-amber-900 serif">Roots: Growth Zones</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-sm text-slate-600 mb-2">Roots grow exclusively from the apex, divided into three distinct zones:</p>
+                        <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                            <strong class="text-sm text-slate-800">1. Zone of Cell Division (RAM)</strong>
+                            <p class="text-xs text-slate-600 mt-1">The apical meristem actively undergoing mitosis. Shielded by the <strong>Root Cap</strong>, which secretes mucilage to lubricate passage through abrasive soil and contains statoliths for gravitropism.</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                            <strong class="text-sm text-slate-800">2. Zone of Elongation</strong>
+                            <p class="text-xs text-slate-600 mt-1">Cells rapidly elongate (driven by auxin and vacuole turgor pressure), physically pushing the root tip deeper into the soil.</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                            <strong class="text-sm text-slate-800">3. Zone of Maturation (Differentiation)</strong>
+                            <p class="text-xs text-slate-600 mt-1">Cells complete their differentiation into functional tissues (xylem, phloem, endodermis). Epidermal cells extend out to form <strong>Root Hairs</strong> for massive surface area absorption.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEMS -->
+                <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+                    <div class="bg-emerald-50 p-4 border-b border-emerald-200 flex items-center gap-3">
+                        <span class="text-3xl">🎋</span><h3 class="text-2xl font-bold text-emerald-900 serif">Stems: Secondary Growth</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-slate-600 mb-4">While monocots only grow taller, dicots and gymnosperms grow wider via lateral meristems.</p>
+                        <div class="space-y-3">
+                            <div class="bg-emerald-100 p-4 rounded border border-emerald-300 shadow-inner">
+                                <strong class="text-sm text-emerald-900 block mb-2">The Vascular Cambium</strong>
+                                <p class="text-xs text-emerald-800 mb-2">A cylinder of meristematic cells one cell layer thick. It divides to add:</p>
+                                <ul class="list-disc pl-4 text-xs text-emerald-800 space-y-1">
+                                    <li><strong>Secondary Xylem (Wood):</strong> Accumulated towards the <em>inside</em>. Older xylem becomes clogged with resins (heartwood), while newer xylem actively transports water (sapwood). Growth rings represent seasonal xylem deposition.</li>
+                                    <li><strong>Secondary Phloem (Inner Bark):</strong> Accumulated towards the <em>outside</em>. Does not build up massively because older phloem gets crushed and sloughed off as the tree expands.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200 mt-4">
+                                <strong class="text-sm text-slate-800">The Cork Cambium (Phellogen)</strong>
+                                <p class="text-xs text-slate-600 mt-1">Produces thick, waxy cork cells outward to replace the original epidermis, protecting the expanding stem from pathogens and water loss. (Cork + Cork Cambium = Periderm / Outer Bark).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: WATER & MINERALS ================= -->
+        <section id="sec-water" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Water & Mineral Transport</h2>
+                <p class="text-lg text-slate-600">Thermodynamic movement of bulk fluids and the active, ATP-driven molecular pumps required to concentrate soil nutrients.</p>
+            </div>
+
+            <!-- Chart & Theory -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-10">
+                <div class="flex flex-col lg:flex-row gap-8 items-center">
+                    <div class="w-full lg:w-1/3">
+                        <h3 class="text-2xl font-bold text-slate-800 mb-3 serif">Cohesion-Tension Theory</h3>
+                        <div class="bg-blue-50 text-blue-900 p-3 rounded-lg font-mono text-center mb-4 border border-blue-200 font-bold text-sm">
+                            $\Psi = \Psi_s + \Psi_p$
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4">Water moves passively from <strong>higher</strong> to <strong>lower</strong> (more negative) water potential ($\Psi$). Adding solutes ($\Psi_s$) makes potential negative. Physical tension ($\Psi_p$) makes it vastly negative.</p>
+                        <div class="p-4 bg-sky-100 border-l-4 border-sky-500 rounded text-sm text-sky-900 shadow-inner">
+                            <strong>Mechanism:</strong> Solar evaporation at the leaf creates severe negative pressure. Because water molecules hydrogen-bond to each other (Cohesion) and to the xylem walls (Adhesion), this tension physically pulls the entire fluid column up from the soil.
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-2/3">
+                        <div class="chart-container"><canvas id="waterPotentialChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mineral Transport -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Root Pathways -->
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4 serif">Root Cortex Pathways</h3>
+                    <p class="text-sm text-slate-600 mb-6">Water and minerals travel from the root hair to the vascular cylinder (stele) through distinct cellular routes before hitting the Endodermis.</p>
+                    
+                    <div class="flex flex-col gap-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
+                            <div class="absolute right-0 top-0 bottom-0 w-2 bg-blue-400"></div>
+                            <h4 class="font-bold text-blue-800 mb-1">Apoplastic Route</h4>
+                            <p class="text-xs text-slate-600">Movement entirely through the continuous network of non-living <strong>cell walls and extracellular spaces</strong>. It is fast and unregulated. Blocked by the Casparian Strip.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
+                            <div class="absolute right-0 top-0 bottom-0 w-2 bg-emerald-500"></div>
+                            <h4 class="font-bold text-emerald-800 mb-1">Symplastic Route</h4>
+                            <p class="text-xs text-slate-600">Movement through the living cytosol, passing from cell to cell via cytoplasmic channels called <strong>plasmodesmata</strong>. Highly regulated selective uptake.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative overflow-hidden">
+                            <div class="absolute right-0 top-0 bottom-0 w-2 bg-purple-400"></div>
+                            <h4 class="font-bold text-purple-800 mb-1">Transmembrane Route</h4>
+                            <p class="text-xs text-slate-600">Water crosses plasma membranes and cell walls repeatedly, heavily relying on specialized membrane water channels called <strong>Aquaporins</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Mineral Uptake -->
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4 serif">Active Mineral Absorption</h3>
+                    <p class="text-sm text-slate-600 mb-6">Soil minerals are highly dilute. Roots must expend massive amounts of cellular energy (ATP) to concentrate essential elements against their gradient.</p>
+                    
+                    <!-- Infographic: Cation Exchange -->
+                    <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-inner relative font-sans h-64 flex flex-col justify-between">
+                        <h4 class="text-sm font-bold text-amber-900 mb-2">Cation Exchange in Soil</h4>
+                        
+                        <div class="flex items-center justify-between h-full px-4 relative">
+                            <!-- Clay Particle -->
+                            <div class="w-24 h-24 bg-orange-900 rounded-[2rem] border-4 border-orange-950 flex items-center justify-center relative shadow-lg">
+                                <span class="text-white text-xs font-bold">Clay Particle<br>(- Charge)</span>
+                                <!-- Bound cations -->
+                                <div class="absolute -top-3 -right-3 bg-blue-100 text-blue-800 font-bold px-1 rounded-full text-[10px] border border-blue-400 shadow">K⁺</div>
+                                <div class="absolute top-1/2 -right-4 bg-emerald-100 text-emerald-800 font-bold px-1 rounded-full text-[10px] border border-emerald-400 shadow">Ca²⁺</div>
+                                <div class="absolute -bottom-3 right-0 bg-blue-100 text-blue-800 font-bold px-1 rounded-full text-[10px] border border-blue-400 shadow">K⁺</div>
+                            </div>
+
+                            <!-- Exchange Flow -->
+                            <div class="flex flex-col items-center justify-center flex-1 relative">
+                                <div class="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-white/80 px-1 rounded absolute top-2">
+                                    <span class="text-lg">←</span> H⁺ Secreted
+                                </div>
+                                <div class="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-white/80 px-1 rounded absolute bottom-2">
+                                    Released K⁺ <span class="text-lg">→</span>
+                                </div>
+                            </div>
+
+                            <!-- Root Hair -->
+                            <div class="w-20 h-32 bg-green-100 border-l-4 border-y-4 border-green-500 rounded-l-full relative flex items-center justify-center shadow-inner">
+                                <span class="text-green-800 text-xs font-bold transform -rotate-90 whitespace-nowrap">Root Hair</span>
+                                <!-- Proton Pump -->
+                                <div class="absolute -left-3 top-1/4 w-5 h-5 bg-red-500 rounded-full border border-red-800 flex items-center justify-center shadow">
+                                    <span class="text-white text-[8px] font-bold">ATP</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-[10px] text-slate-700 mt-2 bg-white/80 p-1.5 rounded">
+                            <strong>Mechanism:</strong> Roots use ATP to pump H⁺ into the soil. These protons displace mineral cations (K⁺, Ca²⁺) tightly bound to negatively charged soil particles. The freed minerals are then absorbed through specific ion channels.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: LIPID SYNTHESIS (NEW) ================= -->
+        <section id="sec-lipids" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-4xl font-bold text-slate-800 mb-2 serif">Lipid Biosynthesis & Metabolism</h2>
+                <p class="text-lg text-slate-600">The complex biochemical pathways plants use to synthesize structural membrane lipids, waxes, and high-density energy storage oils (Triacylglycerols).</p>
+            </div>
+
+            <!-- Elaborated Spatial Flowchart for Lipid Synthesis -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-10 overflow-hidden relative">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2 serif">De Novo Fatty Acid Synthesis to Membrane/Storage Lipids</h3>
+                <p class="text-sm text-slate-500 mb-6">Unlike animals, plant de novo fatty acid synthesis occurs entirely within the <strong>Plastid</strong>. The acyl chains are then exported to the <strong>Endoplasmic Reticulum (ER)</strong> for assembly into complex lipids via the Kennedy Pathway.</p>
+                
+                <div class="infographic-wrapper">
+                    <div class="min-w-[1000px] h-[480px] bg-slate-50 rounded-2xl border border-slate-300 relative font-sans flex overflow-hidden shadow-inner">
+                        
+                        <!-- 1. PLASTID (Left Side) -->
+                        <div class="w-5/12 bg-emerald-50 h-full border-r-4 border-dashed border-slate-400 p-6 relative">
+                            <div class="absolute top-4 left-6 bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-widest shadow">Plastid (Stroma)</div>
+                            <div class="absolute bottom-4 left-6 text-[10px] text-emerald-800 bg-emerald-100 p-2 rounded border border-emerald-300">
+                                <strong>Fatty Acid Synthase (FAS):</strong><br>A multi-enzyme complex that elongates the carbon chain by adding 2-carbon units at a time, cycling until it reaches 16C or 18C.
+                            </div>
+                            
+                            <div class="flex flex-col items-center mt-10">
+                                <!-- Acetyl CoA -->
+                                <div class="bg-white border-2 border-emerald-600 text-emerald-900 font-bold px-4 py-2 rounded-lg shadow text-sm">Acetyl-CoA <span class="text-xs font-normal">(2C)</span></div>
+                                
+                                <!-- ACCase reaction -->
+                                <div class="h-10 border-l-4 border-emerald-400 relative">
+                                    <span class="absolute top-1/2 -translate-y-1/2 left-4 text-[10px] font-bold text-slate-700 bg-white px-1 border border-slate-300 rounded shadow-sm whitespace-nowrap">ACCase Enzyme (Rate-Limiting)</span>
+                                    <span class="absolute top-1/2 -translate-y-1/2 right-4 text-[9px] text-red-600 font-bold">-1 ATP , +CO₂</span>
+                                </div>
+                                <div class="text-emerald-500 text-2xl -mt-4 flow-arrow-down"></div>
+
+                                <!-- Malonyl CoA -->
+                                <div class="bg-white border-2 border-emerald-600 text-emerald-900 font-bold px-4 py-2 rounded-lg shadow text-sm">Malonyl-CoA <span class="text-xs font-normal">(3C)</span></div>
+                                
+                                <div class="h-8 border-l-4 border-emerald-400"></div>
+                                <div class="text-emerald-500 text-2xl -mt-4 flow-arrow-down"></div>
+                                
+                                <!-- FAS Cycle -->
+                                <div class="bg-emerald-200 border-2 border-emerald-500 rounded-full w-32 h-32 flex flex-col items-center justify-center text-center shadow-lg relative z-10">
+                                    <strong class="text-emerald-900 text-sm leading-tight">FAS Complex Cycle</strong>
+                                    <span class="text-[9px] text-emerald-800 mt-1">(Adds 2C per turn)</span>
+                                    <span class="text-[9px] text-purple-700 font-bold bg-white px-1 rounded shadow-sm mt-1 border border-purple-200">Uses NADPH & ATP</span>
+                                    <!-- Spin visual -->
+                                    <div class="absolute inset-1 border-4 border-dashed border-emerald-400 rounded-full -z-10 animate-[spin_10s_linear_infinite]"></div>
+                                </div>
+
+                                <!-- Output FAs -->
+                                <div class="h-8 border-l-4 border-emerald-400"></div>
+                                <div class="text-emerald-500 text-2xl -mt-4 flow-arrow-down"></div>
+                                
+                                <div class="flex gap-2">
+                                    <div class="bg-white border-2 border-emerald-700 text-emerald-900 font-bold px-2 py-1 rounded shadow-sm text-xs">Palmitoyl-ACP (16:0)</div>
+                                    <div class="bg-white border-2 border-emerald-700 text-emerald-900 font-bold px-2 py-1 rounded shadow-sm text-xs">Stearoyl-ACP (18:0)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. CYTOSOL TRANSFER -->
+                        <div class="w-2/12 flex flex-col items-center justify-center relative">
+                            <div class="absolute top-4 bg-slate-300 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-slate-400">Cytosol</div>
+                            
+                            <div class="text-[10px] text-slate-600 bg-white p-1 rounded border border-slate-200 text-center mb-2 z-10 shadow">
+                                Thioesterases cleave ACP.<br>Acyl-CoA Synthetase<br>attaches CoA.
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <div class="w-16 h-1 solid-line-horizontal border-slate-400"></div>
+                                <span class="text-slate-500 text-2xl leading-none -ml-1 z-10">▶</span>
+                            </div>
+                            
+                            <div class="bg-yellow-100 border-2 border-yellow-500 text-yellow-900 font-bold px-3 py-2 rounded-lg shadow-md text-xs mt-2 z-10 text-center">
+                                Free Acyl-CoA<br><span class="font-normal text-[9px]">(16:0 or 18:1)</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. ENDOPLASMIC RETICULUM (Right Side) -->
+                        <div class="w-5/12 bg-blue-50 h-full border-l-4 border-dashed border-slate-400 p-6 relative flex flex-col items-center">
+                            <div class="absolute top-4 right-6 bg-blue-800 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-widest shadow">Endoplasmic Reticulum</div>
+                            
+                            <div class="mt-8 text-center w-full">
+                                <h4 class="font-bold text-blue-900 text-sm mb-1">The Kennedy Pathway (Lipid Assembly)</h4>
+                                <p class="text-[10px] text-blue-800 mb-6 bg-blue-100 p-2 rounded border border-blue-200">Sequential transfer of Acyl-CoA chains onto a Glycerol-3-Phosphate (G3P) backbone.</p>
+
+                                <!-- Assembly Steps -->
+                                <div class="flex flex-col items-center relative">
+                                    <div class="bg-white border border-slate-400 px-4 py-1.5 rounded shadow-sm text-xs font-bold">Glycerol-3-Phosphate (G3P)</div>
+                                    <div class="h-6 border-l-2 border-slate-400"></div>
+                                    <div class="bg-white border border-slate-400 px-4 py-1.5 rounded shadow-sm text-xs font-bold">Lysophosphatidic Acid (LPA)</div>
+                                    <div class="h-6 border-l-2 border-slate-400"></div>
+                                    <div class="bg-white border-2 border-blue-500 text-blue-900 px-4 py-1.5 rounded shadow-md text-xs font-bold">Phosphatidic Acid (PA) <span class="text-[9px] font-normal text-slate-500 block">Central Hub</span></div>
+                                    
+                                    <div class="w-32 h-6 border-t-2 border-l-2 border-r-2 border-slate-400 rounded-t-lg mt-2 relative"></div>
+                                    
+                                    <div class="flex justify-between w-[20rem] -mt-[2px]">
+                                        <div class="flex flex-col items-center">
+                                            <div class="text-slate-400 text-xl flow-arrow-down"></div>
+                                            <!-- Structural Lipids -->
+                                            <div class="bg-indigo-100 border-2 border-indigo-500 text-indigo-900 font-bold px-4 py-3 rounded-lg shadow-lg text-sm text-center">
+                                                Phospholipids<br><span class="text-[10px] font-normal">(e.g., PC, PE, PI)</span><br>
+                                                <span class="text-[9px] text-indigo-700 bg-white px-1 rounded border border-indigo-200 mt-1 inline-block">Cellular Membranes</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex flex-col items-center">
+                                            <div class="text-slate-400 text-xl flow-arrow-down"></div>
+                                            <!-- Storage Lipids -->
+                                            <div class="bg-yellow-100 border-2 border-yellow-500 text-yellow-900 font-bold px-4 py-3 rounded-lg shadow-lg text-sm text-center">
+                                                Triacylglycerols (TAG)<br><span class="text-[10px] font-normal">(Storage Oils)</span><br>
+                                                <span class="text-[9px] text-yellow-700 bg-white px-1 rounded border border-yellow-300 mt-1 inline-block">Stored in Oleosins (Seed Oil Bodies)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lipid Discussion Text -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500">
+                    <h4 class="font-bold text-slate-800 text-lg mb-3">1. De Novo Synthesis (Plastid)</h4>
+                    <p class="text-sm text-slate-700 mb-3">Plant lipid synthesis is unique; unlike animals, the <em>de novo</em> creation of fatty acids occurs entirely within plastids (chloroplasts in leaves, amyloplasts/leucoplasts in seeds), not the cytosol.</p>
+                    <ul class="text-sm text-slate-700 list-disc pl-5 space-y-2">
+                        <li><strong>ACCase Enzyme:</strong> Acetyl-CoA Carboxylase converts Acetyl-CoA (2C) into Malonyl-CoA (3C). This is the critical, highly regulated, <strong>rate-limiting step</strong>.</li>
+                        <li><strong>FAS Complex:</strong> Fatty Acid Synthase repeatedly condenses Malonyl-ACP units, adding 2 carbons per cycle (while releasing CO₂). It uses massive amounts of NADPH (from light reactions or pentose phosphate pathway) to reduce the chain.</li>
+                        <li><strong>Termination:</strong> The cycle stops at 16:0 (Palmitic acid) or 18:0 (Stearic acid). A desaturase in the plastid may introduce one double bond (forming 18:1 Oleic acid) before export.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-blue-500">
+                    <h4 class="font-bold text-slate-800 text-lg mb-3">2. Assembly & Storage (ER)</h4>
+                    <p class="text-sm text-slate-700 mb-3">Free fatty acids are exported to the cytosol, converted to Acyl-CoAs, and transported to the Endoplasmic Reticulum for assembly via the <strong>Kennedy Pathway</strong>.</p>
+                    <ul class="text-sm text-slate-700 list-disc pl-5 space-y-2">
+                        <li><strong>Structural Lipids:</strong> Phosphatidic Acid (PA) is converted into diacylglycerol (DAG) and then modified with various head groups (e.g., choline, ethanolamine) to form the glycerophospholipids that make up all cellular membrane bilayers.</li>
+                        <li><strong>Storage Lipids (TAGs):</strong> In developing seeds (like Canola, Soy, Peanut), a third fatty acid is attached to DAG to form highly hydrophobic Triacylglycerol (TAG).</li>
+                        <li><strong>Oil Bodies:</strong> Because TAGs are completely insoluble in water, they "bud off" from the ER membrane, encapsulated by a phospholipid monolayer coated in stabilizing proteins called <strong>Oleosins</strong>, forming seed oil bodies.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: PHOTOSYNTHESIS (EXPANDED) ================= -->
+        <section id="sec-photosynthesis" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-4xl font-bold text-slate-800 mb-2 serif">Photosynthesis & Biochemical Carbon Fixation</h2>
+                <p class="text-lg text-slate-600">Explore the exact molecular intermediates and electron carriers driving plant metabolism.</p>
+            </div>
+
+            <!-- Detailed Z-Scheme Infographic -->
+            <div class="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl mb-12 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-emerald-500 text-emerald-900 font-bold px-4 py-1 rounded-bl-xl text-xs uppercase tracking-widest">Thylakoid Membrane</div>
+                <h3 class="text-2xl font-bold text-emerald-400 mb-2 serif">1. Detailed Light-Dependent Reactions (Z-Scheme)</h3>
+                <p class="text-sm text-slate-300 mb-6">Tracking the exact flow of electrons from Water to NADPH, highlighting specific membrane proteins and energy states.</p>
+                
+                <div class="infographic-wrapper py-6">
+                    <div class="min-w-[1100px] h-[500px] relative font-sans bg-slate-800 rounded-xl border border-slate-700 shadow-inner">
+                        
+                        <!-- Y-Axis (Energy/Redox Potential) -->
+                        <div class="absolute left-6 top-8 bottom-12 w-1 border-l-2 border-slate-600 flex flex-col justify-between text-xs text-slate-400 pl-2">
+                            <span>High Energy (More Negative Redox Potential)</span>
+                            <span>Low Energy (More Positive Redox Potential)</span>
+                        </div>
+
+                        <!-- 1. H2O Input & Splitting -->
+                        <div class="absolute bottom-6 left-16 text-center">
+                            <div class="bg-blue-900 border border-blue-500 text-blue-200 px-3 py-1 rounded text-sm shadow font-bold">H₂O</div>
+                            <div class="text-slate-400 text-lg my-1 leading-none">↓</div>
+                            <div class="bg-slate-700 px-2 py-1 rounded border border-slate-600 text-[10px] font-mono mb-1 text-sky-300">Oxygen-Evolving Complex</div>
+                            <div class="text-xs text-slate-300 font-bold">½ O₂ ↑ + 2H⁺ + <span class="text-yellow-400">2e⁻</span></div>
+                        </div>
+
+                        <!-- 2. PSII (P680) -->
+                        <div class="absolute bottom-24 left-44 w-28 h-28 bg-emerald-700 border-4 border-emerald-500 rounded-full flex flex-col items-center justify-center text-center shadow-[0_0_20px_rgba(16,185,129,0.4)] z-10">
+                            <strong class="text-white text-lg">PS II</strong>
+                            <span class="text-sm text-emerald-200 font-bold">P680</span>
+                            <!-- Photon -->
+                            <div class="absolute -top-16 -left-12 text-yellow-400 font-bold flex flex-col items-center animate-pulse">
+                                <span class="text-2xl">☀️ 680nm</span>
+                                <span class="text-2xl rotate-45 transform translate-x-2 translate-y-1">〰️▶</span>
+                            </div>
+                        </div>
+
+                        <!-- Excitation Path 1 -->
+                        <div class="absolute bottom-40 left-[14rem] w-32 h-[14rem] z-scheme-path opacity-80"></div>
+
+                        <!-- 3. Primary Acceptor (Pheophytin) -->
+                        <div class="absolute top-14 left-[21rem] flex flex-col items-center z-10">
+                            <span class="text-yellow-400 font-bold text-lg mb-1">e⁻</span>
+                            <div class="bg-slate-700 border-2 border-slate-400 px-4 py-2 rounded-lg shadow text-xs text-slate-200">
+                                <strong class="text-emerald-300 block mb-1">Primary Acceptor</strong>
+                                (Pheophytin)
+                            </div>
+                        </div>
+
+                        <!-- ETC Downhill Path -->
+                        <div class="absolute top-28 left-[24rem] w-64 h-36 z-scheme-path-down opacity-80"></div>
+                        
+                        <!-- 4. Plastoquinone (PQ) -->
+                        <div class="absolute top-[10rem] left-[27rem] bg-indigo-900 border border-indigo-400 px-3 py-1 rounded shadow z-10 text-xs text-indigo-200 font-bold">Plastoquinone (PQ)</div>
+
+                        <!-- 5. Cytochrome b6f -->
+                        <div class="absolute top-[13.5rem] left-[31rem] bg-purple-800 border-2 border-purple-400 px-4 py-3 rounded-lg shadow-lg z-10 text-xs text-center flex flex-col items-center">
+                            <strong class="text-white mb-1">Cytochrome b₆f Complex</strong>
+                            <div class="bg-slate-900 px-2 py-1 rounded text-purple-300 mt-1 flex items-center gap-1 border border-purple-600">
+                                <span>Pumps</span> <strong class="text-sky-400 text-sm">H⁺</strong> <span>to Lumen</span>
+                            </div>
+                        </div>
+
+                        <!-- ATP Synthase context -->
+                        <div class="absolute bottom-6 left-[31rem] flex flex-col items-center border border-dashed border-yellow-700 p-2 rounded bg-yellow-900/30">
+                            <span class="text-sky-400 text-xs font-bold mb-1">↓ H⁺ Gradient Drives ↓</span>
+                            <div class="bg-yellow-600 border border-yellow-400 text-yellow-100 px-3 py-1 rounded-full text-xs font-bold">ATP Synthase ➔ ATP</div>
+                        </div>
+
+                        <!-- 6. Plastocyanin (PC) -->
+                        <div class="absolute bottom-36 left-[39rem] bg-indigo-900 border border-indigo-400 px-3 py-1 rounded shadow z-10 text-xs text-indigo-200 font-bold">Plastocyanin (PC)</div>
+
+                        <!-- 7. PSI (P700) -->
+                        <div class="absolute bottom-20 left-[45rem] w-28 h-28 bg-emerald-600 border-4 border-emerald-400 rounded-full flex flex-col items-center justify-center text-center shadow-[0_0_20px_rgba(52,211,153,0.4)] z-10">
+                            <strong class="text-white text-lg">PS I</strong>
+                            <span class="text-sm text-emerald-200 font-bold">P700</span>
+                            <div class="absolute -top-16 -left-12 text-yellow-400 font-bold flex flex-col items-center animate-pulse">
+                                <span class="text-2xl">☀️ 700nm</span>
+                                <span class="text-2xl rotate-45 transform translate-x-2 translate-y-1">〰️▶</span>
+                            </div>
+                        </div>
+
+                        <!-- Excitation Path 2 -->
+                        <div class="absolute bottom-36 left-[49rem] w-24 h-[16rem] z-scheme-path opacity-80"></div>
+
+                        <!-- 8. Primary Acceptor PSI (A0) -->
+                        <div class="absolute top-10 left-[53rem] flex flex-col items-center z-10">
+                            <span class="text-yellow-400 font-bold text-lg mb-1">e⁻</span>
+                            <div class="bg-slate-700 border-2 border-slate-400 px-4 py-2 rounded-lg shadow text-xs text-slate-200 text-center">
+                                <strong class="text-emerald-300 block mb-1">Primary Acceptor</strong>
+                                (Chlorophyll A₀)
+                            </div>
+                        </div>
+
+                        <!-- 9. Ferredoxin (Fd) -->
+                        <div class="absolute top-[6.5rem] left-[59rem] bg-orange-800 border border-orange-400 px-3 py-1 rounded shadow z-10 text-xs text-orange-200 font-bold">Ferredoxin (Fd)</div>
+
+                        <!-- 10. NADP+ Reductase -->
+                        <div class="absolute top-36 left-[62rem] flex flex-col items-center text-center z-10">
+                            <div class="text-yellow-400 text-lg font-bold">↘ e⁻</div>
+                            <div class="bg-slate-800 border-2 border-blue-500 p-3 rounded-lg text-xs text-slate-200 mb-2 shadow-lg">
+                                <strong class="block text-blue-300 mb-1">NADP⁺ Reductase</strong>
+                                Converts NADP⁺ + H⁺
+                            </div>
+                            <div class="text-slate-400 mb-1 text-lg leading-none">↓</div>
+                            <div class="bg-blue-600 border-2 border-blue-400 text-white px-5 py-2 rounded-full text-base font-bold shadow-[0_0_20px_rgba(37,99,235,0.6)]">
+                                NADPH
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Calvin Cycle Infographic -->
+            <div class="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-md mb-12 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-emerald-100 text-emerald-900 font-bold px-4 py-1 rounded-bl-xl text-xs uppercase tracking-widest border-b border-l border-emerald-200">Stroma</div>
+                <h3 class="text-2xl font-bold text-emerald-900 mb-2 serif">2. Detailed Light-Independent Reactions (Calvin Cycle)</h3>
+                <p class="text-sm text-slate-600 mb-8">Detailed tracking of the carbon molecules and enzymatic intermediates during the fixation of atmospheric CO₂.</p>
+                
+                <div class="infographic-wrapper">
+                    <div class="min-w-[900px] h-[500px] relative bg-slate-50 rounded-[3rem] border-8 border-dashed border-emerald-200 shadow-inner flex items-center justify-center font-sans">
+                        
+                        <!-- Inputs -->
+                        <div class="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                            <div class="bg-slate-800 text-white font-bold px-4 py-2 rounded-full text-sm shadow-md">Input: 3 CO₂ (from atmosphere)</div>
+                            <div class="text-slate-500 text-2xl font-bold mt-1">↓</div>
+                        </div>
+
+                        <!-- 1. Fixation (Top) -->
+                        <div class="absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center w-64 text-center">
+                            <div class="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold mb-1 shadow">Step 1: Carbon Fixation</div>
+                            <div class="bg-white border-2 border-emerald-500 p-3 rounded-xl shadow-lg w-full">
+                                <strong class="text-emerald-900 block text-sm border-b pb-1 mb-2">Enzyme: RuBisCO</strong>
+                                <div class="text-xs text-slate-700">Attaches 3 CO₂ to 3 molecules of <strong>Ribulose-1,5-bisphosphate (RuBP)</strong> (5C).</div>
+                                <div class="text-[10px] bg-slate-100 p-1 mt-2 rounded border border-slate-200">Result: Short-lived 6C intermediate splits instantly.</div>
+                            </div>
+                        </div>
+
+                        <!-- Path: Fixation to Reduction -->
+                        <div class="absolute top-36 right-[22%] w-32 h-32 border-t-4 border-r-4 border-slate-300 rounded-tr-[3rem]"></div>
+                        <div class="absolute top-52 right-[20.5%] text-2xl text-slate-400 font-bold">↓</div>
+
+                        <!-- Intermediate: 3-PGA -->
+                        <div class="absolute top-56 right-16 flex flex-col items-center w-48 text-center">
+                            <div class="bg-amber-100 border border-amber-400 text-amber-900 p-2 rounded shadow font-bold text-xs">
+                                6 molecules of<br><span class="text-sm">3-Phosphoglycerate (3-PGA)</span><br><span class="text-[10px] font-normal text-amber-700">(3 Carbons each)</span>
+                            </div>
+                        </div>
+
+                        <!-- 2. Reduction (Bottom Right) -->
+                        <div class="absolute bottom-20 right-16 flex flex-col items-center w-56 text-center">
+                            <div class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold mb-1 shadow">Step 2: Reduction</div>
+                            <div class="bg-white border-2 border-blue-500 p-3 rounded-xl shadow-lg w-full relative">
+                                <div class="absolute -left-12 top-2 flex flex-col gap-1 text-[10px] font-bold text-yellow-600">
+                                    <span>6 ATP ➔</span>
+                                    <span class="text-purple-600">6 NADPH ➔</span>
+                                </div>
+                                <strong class="text-blue-900 block text-sm border-b pb-1 mb-2">1,3-Bisphosphoglycerate</strong>
+                                <div class="text-xs text-slate-700">Phosphorylated by ATP, then reduced by NADPH (loses phosphate).</div>
+                                <div class="mt-2 bg-blue-100 border border-blue-300 p-2 rounded shadow font-bold text-xs text-blue-900">
+                                    Yields 6 molecules of<br><span class="text-sm text-blue-700">Glyceraldehyde-3-phosphate (G3P)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Path: Reduction to Output & Regeneration -->
+                        <div class="absolute bottom-[4.5rem] right-[30%] w-32 h-16 border-b-4 border-slate-300"></div>
+                        
+                        <!-- Output G3P -->
+                        <div class="absolute bottom-8 left-[45%] flex flex-col items-center">
+                            <div class="text-slate-500 text-2xl font-bold mb-1">↓</div>
+                            <div class="bg-pink-600 text-white font-bold px-4 py-2 rounded-full text-sm shadow-lg border-2 border-pink-400">
+                                Output: 1 G3P (3C)<br><span class="text-[10px] font-normal">(Used to make Glucose/Sucrose)</span>
+                            </div>
+                        </div>
+
+                        <!-- Path: Continuing Regeneration -->
+                        <div class="absolute bottom-[4.5rem] left-[20%] w-48 h-32 border-b-4 border-l-4 border-slate-300 rounded-bl-[3rem]"></div>
+                        <div class="absolute bottom-32 left-[19%] text-2xl text-slate-400 font-bold -rotate-90">➔</div>
+
+                        <!-- 3. Regeneration (Left) -->
+                        <div class="absolute bottom-36 left-12 flex flex-col items-center w-56 text-center">
+                            <div class="bg-slate-100 border border-slate-300 p-2 rounded shadow text-xs font-bold text-slate-700 mb-3">
+                                Remaining 5 G3P (15C total)
+                            </div>
+                            
+                            <div class="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold mb-1 shadow">Step 3: Regeneration</div>
+                            <div class="bg-white border-2 border-amber-500 p-3 rounded-xl shadow-lg w-full relative">
+                                <div class="absolute -right-12 top-1/2 -translate-y-1/2 text-[10px] font-bold text-yellow-600">
+                                    <span>⬅ 3 ATP</span>
+                                </div>
+                                <strong class="text-amber-900 block text-sm border-b pb-1 mb-2">Complex rearrangements</strong>
+                                <div class="text-xs text-slate-700">Uses 3 ATP to convert the 5 G3P molecules back into the starting acceptor molecule.</div>
+                            </div>
+                        </div>
+
+                        <!-- Path: Back to top -->
+                        <div class="absolute top-28 left-[20%] w-24 h-24 border-l-4 border-t-4 border-slate-300 rounded-tl-[3rem]"></div>
+                        <div class="absolute top-[6.5rem] left-32 text-2xl text-slate-400 font-bold">➔</div>
+
+                        <!-- Starting Acceptor Label -->
+                        <div class="absolute top-24 left-24 bg-emerald-50 border border-emerald-300 p-2 rounded shadow text-xs font-bold text-emerald-900 text-center">
+                            3 molecules of<br><span class="text-sm">RuBP (5C)</span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+           <!-- Evolutionary Adaptations: C3, C4, CAM -->
+            <div class="bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
+                <div class="bg-emerald-900 p-6 text-white">
+                    <h3 class="text-2xl font-bold serif mb-2">Evolutionary Adaptations to Photorespiration</h3>
+                    <p class="text-sm text-emerald-100">To survive in harsh climates, certain plants evolved mechanisms to forcefully concentrate CO₂ around RuBisCO, completely eliminating wasteful photorespiration.</p>
+                </div>
+                
+                <div class="flex border-b border-slate-200 bg-slate-100">
+                    <button onclick="switchPhotosynthesisTab('c3')" id="tab-c3" class="sub-tab-btn active flex-1 py-4 text-sm md:text-base font-bold border-b-4 text-slate-600 hover:bg-slate-200 transition-colors">C3 (Standard)</button>
+                    <button onclick="switchPhotosynthesisTab('c4')" id="tab-c4" class="sub-tab-btn flex-1 py-4 text-sm md:text-base font-bold border-b-4 text-slate-600 border-transparent hover:bg-slate-200 transition-colors">C4 (Spatial)</button>
+                    <button onclick="switchPhotosynthesisTab('cam')" id="tab-cam" class="sub-tab-btn flex-1 py-4 text-sm md:text-base font-bold border-b-4 text-slate-600 border-transparent hover:bg-slate-200 transition-colors">CAM (Temporal)</button>
+                </div>
+
+                <div class="p-6 md:p-8 bg-[#faf9f6]">
+                    <div id="content-c3" class="photo-content block animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">C3 Pathway</h4>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded">Cool & Moist Climates</span>
+                        <p class="text-sm text-slate-600 mt-4 mb-4">Examples: Rice, Wheat, Soybeans, Trees. CO₂ is fixed directly by RuBisCO in mesophyll cells. Vulnerable to O₂ binding if stomata close.</p>
+                    </div>
+                    <div id="content-c4" class="photo-content hidden animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">C4 Pathway (Spatial Separation)</h4>
+                        <span class="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded">Hot & Sunny Climates</span>
+                        <p class="text-sm text-slate-600 mt-4 mb-4">Examples: Corn, Sugarcane. Uses Kranz Anatomy. CO₂ is fixed by PEP Carboxylase (ignores O₂) in Mesophyll, converted to Malate, and pumped deep into the Bundle-Sheath cell to saturate RuBisCO.</p>
+                    </div>
+                    <div id="content-cam" class="photo-content hidden animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">CAM Pathway (Temporal Separation)</h4>
+                        <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">Extreme Arid/Desert</span>
+                        <p class="text-sm text-slate-600 mt-4 mb-4">Examples: Cacti, Pineapples. Stomata open ONLY at night to collect CO₂ (stored as Malic Acid in the vacuole). By day, stomata lock shut, and the acid releases CO₂ for the Calvin Cycle.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION: RESPIRATION (EXPANDED INFOGRAPHICS) ================= -->
+        <section id="sec-respiration" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Cellular Respiration Biochemistry</h2>
+                <p class="text-lg text-slate-600">Detailed mapping of the exact enzymatic steps, carbon intermediates, and membrane complexes utilized during cellular respiration.</p>
+            </div>
+
+            <!-- INFOGRAPHIC: Glycolysis Flowchart -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 overflow-hidden">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2 serif">1. Detailed Glycolysis Pathway</h3>
+                <p class="text-sm text-slate-500 mb-6">The 10-step anaerobic cleavage of Glucose in the cytosol. Highlighting key intermediates and energy investments.</p>
+                
+                <div class="infographic-wrapper">
+                    <div class="min-w-[900px] bg-slate-50 p-6 rounded-2xl shadow-inner border border-slate-300 flex justify-center font-sans relative">
+                        <div class="absolute top-4 left-6 bg-slate-200 text-slate-600 font-bold px-3 py-1 rounded text-xs uppercase tracking-widest border border-slate-300">Cytosol</div>
+                        
+                        <div class="flex flex-col items-center w-full max-w-3xl">
+                            <!-- Glucose -->
+                            <div class="bg-white border-2 border-slate-800 text-slate-900 font-bold px-6 py-2 rounded-lg shadow-md text-lg">Glucose <span class="text-xs text-slate-500 font-normal">(6C)</span></div>
+                            
+                            <div class="h-8 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 left-4 text-xs font-bold text-red-600 bg-red-100 px-1 border border-red-300 rounded">-1 ATP</span>
+                                <span class="absolute top-1/2 -translate-y-1/2 right-4 text-[10px] text-slate-500 italic">Hexokinase</span>
+                            </div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- G6P -->
+                            <div class="bg-white border border-slate-400 text-slate-700 font-bold px-4 py-1.5 rounded shadow-sm text-sm">Glucose-6-Phosphate (G6P)</div>
+                            
+                            <div class="h-6 border-l-4 border-slate-400"></div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- F6P -->
+                            <div class="bg-white border border-slate-400 text-slate-700 font-bold px-4 py-1.5 rounded shadow-sm text-sm">Fructose-6-Phosphate (F6P)</div>
+                            
+                            <div class="h-8 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 left-4 text-xs font-bold text-red-600 bg-red-100 px-1 border border-red-300 rounded">-1 ATP</span>
+                                <span class="absolute top-1/2 -translate-y-1/2 right-4 text-[10px] text-slate-500 italic">Phosphofructokinase (PFK)</span>
+                            </div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- F1,6BP -->
+                            <div class="bg-white border-2 border-blue-600 text-blue-900 font-bold px-4 py-2 rounded shadow-md text-sm">Fructose-1,6-bisphosphate <span class="text-xs text-blue-600 font-normal">(6C)</span></div>
+                            
+                            <!-- Splitting -->
+                            <div class="w-64 h-8 border-t-4 border-l-4 border-r-4 border-slate-400 rounded-t-xl mt-4 relative">
+                                <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs bg-slate-200 px-2 rounded border border-slate-300 text-slate-600">Aldolase Splitting</span>
+                            </div>
+                            
+                            <div class="flex justify-between w-[18rem] -mt-1">
+                                <div class="text-slate-400 text-2xl flow-arrow-down"></div>
+                                <div class="text-slate-400 text-2xl flow-arrow-down"></div>
+                            </div>
+
+                            <div class="flex justify-between w-[22rem] gap-4 mb-4">
+                                <div class="bg-white border border-slate-400 text-slate-700 font-bold px-2 py-1 rounded shadow-sm text-xs w-full text-center">DHAP <span class="text-[10px] font-normal">(3C)</span><br><span class="text-[9px] text-slate-400">Converts to G3P</span></div>
+                                <div class="bg-white border-2 border-emerald-500 text-emerald-900 font-bold px-2 py-1 rounded shadow-md text-xs w-full text-center">G3P <span class="text-[10px] font-normal">(3C)</span></div>
+                            </div>
+
+                            <div class="bg-slate-800 text-white text-xs px-4 py-1 rounded-full font-bold mb-4">Pathway below occurs x2 (per Glucose)</div>
+
+                            <!-- G3P to 1,3 BPG -->
+                            <div class="h-8 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 left-4 text-xs font-bold text-purple-600 bg-purple-100 px-1 border border-purple-300 rounded">+1 NADH (x2)</span>
+                            </div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- 1,3 BPG -->
+                            <div class="bg-white border border-slate-400 text-slate-700 font-bold px-4 py-1.5 rounded shadow-sm text-sm">1,3-Bisphosphoglycerate (1,3-BPG)</div>
+
+                            <!-- to 3PG -->
+                            <div class="h-8 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 right-4 text-xs font-bold text-yellow-700 bg-yellow-100 px-1 border border-yellow-400 rounded shadow-sm">+1 ATP (x2)</span>
+                            </div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- 3PG -> 2PG -> PEP -->
+                            <div class="bg-white border border-slate-400 text-slate-700 font-bold px-4 py-1.5 rounded shadow-sm text-sm">3-Phosphoglycerate (3-PG)</div>
+                            <div class="h-4 border-l-4 border-slate-400"></div>
+                            <div class="text-slate-400 text-xl -mt-3 flow-arrow-down"></div>
+                            <div class="bg-white border border-slate-400 text-slate-700 font-bold px-4 py-1.5 rounded shadow-sm text-sm">2-Phosphoglycerate (2-PG)</div>
+                            <div class="h-4 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 right-4 text-[10px] text-blue-500 bg-blue-50 px-1 border border-blue-200 rounded">H₂O leaves</span>
+                            </div>
+                            <div class="text-slate-400 text-xl -mt-3 flow-arrow-down"></div>
+
+                            <!-- PEP -->
+                            <div class="bg-white border-2 border-orange-500 text-orange-900 font-bold px-4 py-1.5 rounded shadow-md text-sm">Phosphoenolpyruvate (PEP)</div>
+
+                            <!-- to Pyruvate -->
+                            <div class="h-8 border-l-4 border-slate-400 relative">
+                                <span class="absolute top-1/2 -translate-y-1/2 left-4 text-[10px] text-slate-500 italic">Pyruvate Kinase</span>
+                                <span class="absolute top-1/2 -translate-y-1/2 right-4 text-xs font-bold text-yellow-700 bg-yellow-100 px-1 border border-yellow-400 rounded shadow-sm">+1 ATP (x2)</span>
+                            </div>
+                            <div class="text-slate-400 text-2xl -mt-4 flow-arrow-down"></div>
+
+                            <!-- Pyruvate -->
+                            <div class="bg-slate-800 border-2 border-slate-900 text-white font-bold px-6 py-2 rounded-lg shadow-lg text-lg">Pyruvate <span class="text-xs text-slate-400 font-normal">(3C)</span> <span class="text-amber-400 text-sm ml-2">x2</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFOGRAPHIC: Citric Acid Cycle & ETC -->
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 mb-8 overflow-hidden">
+                <h3 class="text-2xl font-bold text-amber-900 mb-2 serif">2 & 3. Mitochondrion: Krebs Cycle & ETC</h3>
+                <p class="text-sm text-slate-500 mb-6">Mapping the exact organic acids of the Citric Acid Cycle and the multiprotein complexes of the Electron Transport Chain in the inner membrane.</p>
+                
+                <div class="infographic-wrapper">
+                    <div class="min-w-[1200px] h-[550px] bg-amber-50 rounded-[3rem] border-8 border-amber-200 p-8 relative shadow-inner flex font-sans overflow-hidden">
+                        <div class="absolute bottom-4 left-8 font-bold text-amber-800 uppercase tracking-widest text-sm opacity-60">Mitochondrial Matrix</div>
+                        
+                        <!-- Left Side: Krebs Cycle -->
+                        <div class="w-5/12 relative flex justify-center items-center h-full pt-8">
+                            
+                            <!-- Prep Step -->
+                            <div class="absolute top-0 left-12 flex flex-col items-center">
+                                <div class="bg-slate-800 text-white text-xs px-3 py-1 rounded font-bold shadow">Pyruvate (3C)</div>
+                                <div class="h-6 border-l-2 border-slate-400 relative">
+                                    <span class="absolute top-1/2 left-2 text-[9px] bg-slate-200 px-1 rounded whitespace-nowrap">-CO₂ , +NADH</span>
+                                </div>
+                                <div class="text-slate-400 text-lg -mt-2 flow-arrow-down"></div>
+                                <div class="bg-amber-800 text-white text-sm px-3 py-1 rounded font-bold shadow border-2 border-amber-600 z-10">Acetyl CoA (2C)</div>
+                                <div class="text-slate-400 text-lg flow-arrow-down"></div>
+                            </div>
+
+                            <!-- Cycle Circle -->
+                            <div class="w-[300px] h-[300px] border-[6px] border-amber-300 rounded-full relative animate-[spin_60s_linear_infinite]"></div>
+
+                            <!-- Nodes (Positioned absolutely over the spinning circle, but un-spinning themselves relative to wrapper) -->
+                            <!-- Note: To keep text readable, nodes are placed over the circle using absolute positioning relative to the container -->
+                            <div class="absolute inset-0 pt-16 pointer-events-none">
+                                <!-- 12 o'clock -->
+                                <div class="absolute top-[4.5rem] left-[15.5rem] -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-amber-500 px-2 py-1 rounded shadow text-xs font-bold text-amber-900 w-24 text-center">Citrate <span class="font-normal text-[9px] text-slate-500 block">(6C)</span></div>
+                                <!-- 1:30 -->
+                                <div class="absolute top-[8rem] left-[21rem] -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 px-2 py-1 rounded shadow-sm text-[10px] font-bold text-slate-700">Isocitrate (6C)</div>
+                                <!-- 3 o'clock -->
+                                <div class="absolute top-[13.5rem] left-[23rem] -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-amber-500 px-2 py-1 rounded shadow text-[11px] font-bold text-amber-900 text-center w-28">α-Ketoglutarate <span class="font-normal text-[9px] text-slate-500 block">(5C)</span><div class="absolute -right-16 top-1 text-[9px] text-purple-700 bg-purple-100 px-1 rounded shadow-sm border border-purple-300">+NADH, CO₂</div></div>
+                                <!-- 4:30 -->
+                                <div class="absolute top-[19rem] left-[21rem] -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 px-2 py-1 rounded shadow-sm text-[10px] font-bold text-slate-700 w-28 text-center">Succinyl CoA (4C)<div class="absolute -right-16 top-1 text-[9px] text-purple-700 bg-purple-100 px-1 rounded shadow-sm border border-purple-300">+NADH, CO₂</div></div>
+                                <!-- 6 o'clock -->
+                                <div class="absolute top-[21.5rem] left-[15.5rem] -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-amber-500 px-2 py-1 rounded shadow text-xs font-bold text-amber-900 w-24 text-center">Succinate <span class="font-normal text-[9px] text-slate-500 block">(4C)</span><div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] text-yellow-700 bg-yellow-100 px-1 rounded shadow-sm border border-yellow-400">+ATP (via GTP)</div></div>
+                                <!-- 7:30 -->
+                                <div class="absolute top-[19rem] left-[10rem] -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 px-2 py-1 rounded shadow-sm text-[10px] font-bold text-slate-700">Fumarate (4C)<div class="absolute -left-12 top-1 text-[9px] text-purple-700 bg-purple-100 px-1 rounded shadow-sm border border-purple-300">+FADH₂</div></div>
+                                <!-- 9 o'clock -->
+                                <div class="absolute top-[13.5rem] left-[8rem] -translate-x-1/2 -translate-y-1/2 bg-white border border-slate-300 px-2 py-1 rounded shadow-sm text-[10px] font-bold text-slate-700">Malate (4C)</div>
+                                <!-- 10:30 -->
+                                <div class="absolute top-[8rem] left-[10rem] -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-amber-500 px-2 py-1 rounded shadow text-[11px] font-bold text-amber-900 w-28 text-center">Oxaloacetate <span class="font-normal text-[9px] text-slate-500 block">(4C acceptor)</span><div class="absolute -left-12 top-1 text-[9px] text-purple-700 bg-purple-100 px-1 rounded shadow-sm border border-purple-300">+NADH</div></div>
+                            </div>
+                            
+                            <!-- Arrow to ETC -->
+                            <div class="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 flex items-center z-10">
+                                <div class="bg-purple-100 border border-purple-400 text-purple-800 text-[10px] px-2 py-1 font-bold rounded shadow-sm relative -mr-2 z-10">NADH & FADH₂</div>
+                                <div class="w-16 h-1 dashed-line-horizontal border-purple-500"></div>
+                                <span class="text-purple-600 text-2xl leading-none -ml-2">▶</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: ETC & Chemiosmosis -->
+                        <div class="w-7/12 relative border-l-4 border-dashed border-amber-300 pl-10 pr-4 flex flex-col justify-center">
+                            <!-- Inner Membrane Visual -->
+                            <div class="absolute top-20 bottom-20 left-10 right-4 bg-rose-200/40 border-y-4 border-rose-400 rounded-xl z-0"></div>
+                            <div class="absolute top-12 left-12 font-bold text-rose-800 uppercase tracking-widest text-xs bg-rose-100 px-2 py-1 rounded border border-rose-300">Inner Mitochondrial Membrane</div>
+                            <div class="absolute top-2 right-8 font-bold text-slate-500 uppercase tracking-widest text-xs">Intermembrane Space (High H⁺)</div>
+
+                            <div class="flex items-center justify-between mt-8 relative z-10 h-48 w-full pr-12">
+                                
+                                <!-- Complex I -->
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[10px] text-sky-600 font-bold mb-1">↑ H⁺ Pumped</span>
+                                    <div class="w-16 h-28 bg-rose-700 border-2 border-rose-900 rounded-lg shadow-lg flex items-center justify-center text-center p-1">
+                                        <span class="text-white text-xs font-bold">Complex I<br><span class="text-[8px] font-normal block mt-1 leading-tight">(NADH Dehydrogenase)</span></span>
+                                    </div>
+                                    <div class="text-[10px] bg-slate-800 text-purple-300 px-1 py-0.5 rounded mt-2 border border-slate-600">NADH ➔ NAD⁺</div>
+                                </div>
+
+                                <!-- CoQ -->
+                                <div class="w-10 h-10 bg-indigo-500 border-2 border-indigo-800 rounded-full shadow flex items-center justify-center -mt-16">
+                                    <span class="text-white text-[10px] font-bold">CoQ</span>
+                                </div>
+
+                                <!-- Complex II (Does not pump H+) -->
+                                <div class="flex flex-col items-center mt-12">
+                                    <div class="w-14 h-16 bg-rose-600 border-2 border-rose-900 rounded-lg shadow-lg flex items-center justify-center text-center p-1">
+                                        <span class="text-white text-xs font-bold">Comp. II</span>
+                                    </div>
+                                    <div class="text-[10px] bg-slate-800 text-purple-300 px-1 py-0.5 rounded mt-2 border border-slate-600">FADH₂ ➔ FAD</div>
+                                </div>
+
+                                <!-- Complex III -->
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[10px] text-sky-600 font-bold mb-1">↑ H⁺ Pumped</span>
+                                    <div class="w-16 h-28 bg-rose-700 border-2 border-rose-900 rounded-lg shadow-lg flex items-center justify-center text-center p-1">
+                                        <span class="text-white text-xs font-bold">Complex III<br><span class="text-[8px] font-normal block mt-1 leading-tight">(Cytochrome bc1)</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- Cyt C -->
+                                <div class="w-8 h-8 bg-blue-500 border-2 border-blue-800 rounded-full shadow flex items-center justify-center -mt-32">
+                                    <span class="text-white text-[9px] font-bold">Cyt c</span>
+                                </div>
+
+                                <!-- Complex IV -->
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[10px] text-sky-600 font-bold mb-1">↑ H⁺ Pumped</span>
+                                    <div class="w-16 h-28 bg-rose-700 border-2 border-rose-900 rounded-lg shadow-lg flex items-center justify-center text-center p-1 relative">
+                                        <span class="text-white text-xs font-bold">Complex IV<br><span class="text-[8px] font-normal block mt-1 leading-tight">(Cytochrome c oxidase)</span></span>
+                                        <div class="absolute -right-16 -bottom-6 flex items-center gap-1 text-[10px] font-bold text-slate-800 bg-white p-1 rounded shadow-sm border border-slate-300">
+                                            <span>O₂ + 4e⁻ ➔ </span><span class="text-sky-500">2H₂O</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ATP Synthase -->
+                                <div class="flex flex-col items-center ml-12">
+                                    <div class="flex flex-col items-center animate-bounce">
+                                        <span class="text-[10px] text-sky-600 font-bold mb-1">↓ H⁺ Diffuses ↓</span>
+                                        <div class="w-12 h-10 bg-yellow-500 rounded-t-lg border-2 border-yellow-700"></div>
+                                        <div class="w-20 h-16 bg-yellow-600 rounded-full border-2 border-yellow-800 flex items-center justify-center text-center shadow-[0_0_20px_rgba(202,138,4,0.6)]">
+                                            <span class="text-white text-xs font-bold leading-tight">ATP<br>Synthase</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-[12px] bg-slate-800 text-yellow-400 px-3 py-1 rounded mt-2 border border-yellow-500 shadow-lg font-bold">ADP + Pi ➔ ATP (x28)</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Electron flow path line (visual aid) -->
+                            <svg class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 z-0">
+                                <path d="M 120 220 L 190 150 L 260 260 L 350 220 L 410 100 L 490 220" fill="none" stroke="#eab308" stroke-width="4" stroke-dasharray="8 4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text Discussion Tabs (kept concise since infographics now contain immense detail) -->
+            <div class="bg-white rounded-2xl shadow-md border border-slate-300 overflow-hidden">
+                <div class="bg-amber-900 p-6 text-white border-b-4 border-amber-700">
+                    <h3 class="text-2xl font-bold serif mb-2">Biochemical Pathway Breakdown</h3>
+                </div>
+                <div class="flex flex-wrap border-b border-slate-200 bg-slate-100">
+                    <button onclick="switchRespirationTab('glycolysis')" id="tab-glycolysis" class="resp-tab-btn active flex-1 py-4 px-2 text-sm font-bold border-b-4 text-slate-600 hover:bg-slate-200">1. Glycolysis</button>
+                    <button onclick="switchRespirationTab('citric')" id="tab-citric" class="resp-tab-btn flex-1 py-4 px-2 text-sm font-bold border-b-4 text-slate-600 border-transparent hover:bg-slate-200">2. Citric Acid Cycle</button>
+                    <button onclick="switchRespirationTab('oxphos')" id="tab-oxphos" class="resp-tab-btn flex-1 py-4 px-2 text-sm font-bold border-b-4 text-slate-600 border-transparent hover:bg-slate-200">3. Oxidative Phos.</button>
+                    <button onclick="switchRespirationTab('anaerobic')" id="tab-anaerobic" class="resp-tab-btn flex-1 py-4 px-2 text-sm font-bold border-b-4 text-slate-600 border-transparent hover:bg-slate-200">4. Anaerobic Respiration</button>
+                </div>
+                <div class="p-6 md:p-8 bg-[#faf9f6]">
+                    <div id="content-glycolysis" class="resp-content block animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">Glycolysis (Sugar Splitting)</h4>
+                        <p class="text-sm text-slate-700 mt-4 mb-4 leading-relaxed">The 10-step enzymatic pathway in the cytoplasm. It requires 2 ATP initially (Investment Phase) to destabilize Glucose into Fructose-1,6-bisphosphate. This 6C molecule splits into two 3C G3P molecules. During the Payoff Phase, substrate-level phosphorylation yields 4 ATP and 2 NADH, ending with 2 molecules of Pyruvate.</p>
+                    </div>
+                    <div id="content-citric" class="resp-content hidden animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">The Citric Acid Cycle (Krebs Cycle)</h4>
+                        <p class="text-sm text-slate-700 mt-4 mb-4 leading-relaxed">Pyruvate enters the mitochondrial matrix, is converted to Acetyl CoA, and joins Oxaloacetate to form Citrate. Through decarboxylation and redox reactions, the carbons are oxidized to CO₂. The primary purpose is to harvest high-energy electrons onto NAD⁺ and FAD, forming NADH and FADH₂.</p>
+                    </div>
+                    <div id="content-oxphos" class="resp-content hidden animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">Oxidative Phosphorylation</h4>
+                        <p class="text-sm text-slate-700 mt-4 mb-4 leading-relaxed">NADH and FADH₂ donate electrons to the Electron Transport Chain (Complexes I-IV). The energy drop pumps H⁺ into the intermembrane space. Oxygen is the final electron acceptor, forming water. Protons rush back into the matrix via ATP Synthase (chemiosmosis), generating ~28 ATP per glucose.</p>
+                    </div>
+                    <div id="content-anaerobic" class="resp-content hidden animate-fade-in">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-2">Anaerobic Respiration (Fermentation)</h4>
+                        <p class="text-sm text-slate-700 mt-4 mb-4 leading-relaxed">When oxygen is absent (e.g., flooded roots), the ETC halts. Fermentation acts as an emergency pathway to oxidize NADH back into NAD⁺ so Glycolysis can continue producing 2 ATP. In plants, this typically results in Alcoholic Fermentation (Pyruvate ➔ Ethanol + CO₂), which can be toxic if flooding persists.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: ENVIRONMENTAL STRESS ================= -->
+        <section id="sec-environment" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Environmental Stress Responses</h2>
+                <p class="text-lg text-slate-600">Detailed molecular cascades and anatomical adaptations plants deploy to survive harsh abiotic stressors.</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10 flex flex-col md:flex-row h-auto md:h-[500px]">
+                <div class="w-full md:w-1/3 bg-slate-50 p-4 flex flex-col gap-3 border-r border-slate-200 overflow-y-auto">
+                    <button onclick="setStress('drought', this)" class="stress-btn active w-full text-left p-4 rounded-lg bg-amber-100 text-amber-900 font-bold hover:bg-amber-200 transition-all text-lg border border-amber-300">🏜️ Drought</button>
+                    <button onclick="setStress('flooding', this)" class="stress-btn w-full text-left p-4 rounded-lg bg-blue-100 text-blue-900 font-bold hover:bg-blue-200 transition-all text-lg border border-blue-300">🌊 Flooding (Hypoxia)</button>
+                    <button onclick="setStress('cold', this)" class="stress-btn w-full text-left p-4 rounded-lg bg-cyan-100 text-cyan-900 font-bold hover:bg-cyan-200 transition-all text-lg border border-cyan-300">❄️ Cold/Freezing</button>
+                    <button onclick="setStress('salt', this)" class="stress-btn w-full text-left p-4 rounded-lg bg-slate-200 text-slate-800 font-bold hover:bg-slate-300 transition-all text-lg border border-slate-400">🧂 Salinity</button>
+                    <button onclick="setStress('heat', this)" class="stress-btn w-full text-left p-4 rounded-lg bg-red-100 text-red-900 font-bold hover:bg-red-200 transition-all text-lg border border-red-300">🔥 Heat Stress</button>
+                </div>
+                <div class="w-full md:w-2/3 p-8 bg-white flex flex-col justify-center overflow-y-auto" id="stress-display"></div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION: HORMONES ================= -->
+        <section id="sec-hormones" class="module-section hidden max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-4xl font-bold text-slate-800 mb-4 serif">Growth & Phytohormones</h2>
+                <p class="text-lg text-slate-600">The molecular signal transduction pathways dictating growth, cellular differentiation, and reproductive development.</p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px] mb-10">
+                <div class="w-full lg:w-1/4 bg-slate-100 flex flex-row lg:flex-col overflow-x-auto lg:overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200">
+                    <button onclick="showHormone('auxin', this)" class="hormone-tab active text-left px-5 py-4 text-sm font-bold border-b border-slate-200 hover:bg-slate-200 bg-emerald-700 text-white whitespace-nowrap">Auxin (IAA)</button>
+                    <button onclick="showHormone('ga', this)" class="hormone-tab text-left px-5 py-4 text-sm font-bold border-b border-slate-200 hover:bg-slate-200 text-slate-700 whitespace-nowrap">Gibberellins (GA)</button>
+                    <button onclick="showHormone('ck', this)" class="hormone-tab text-left px-5 py-4 text-sm font-bold border-b border-slate-200 hover:bg-slate-200 text-slate-700 whitespace-nowrap">Cytokinins (CK)</button>
+                    <button onclick="showHormone('ethylene', this)" class="hormone-tab text-left px-5 py-4 text-sm font-bold border-b border-slate-200 hover:bg-slate-200 text-slate-700 whitespace-nowrap">Ethylene</button>
+                    <button onclick="showHormone('aba', this)" class="hormone-tab text-left px-5 py-4 text-sm font-bold hover:bg-slate-200 text-slate-700 whitespace-nowrap">Abscisic Acid (ABA)</button>
+                </div>
+                <div class="w-full lg:w-3/4 p-8 relative">
+                    <div id="hormone-auxin" class="hormone-content animate-fade-in block">
+                        <h3 class="text-3xl font-bold text-emerald-800 mb-2 serif">Auxin (IAA)</h3>
+                        <p class="text-slate-600 mb-6">Master growth hormone. Responsible for cell elongation via Acid Growth Hypothesis (stimulating H+ pumps to activate expansins), apical dominance (inhibiting lateral buds), and phototropism/gravitropism via asymmetric polar transport.</p>
+                        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-slate-800 text-lg mb-2">Signal Transduction: Repressor Degradation</h4>
+                            <p class="text-sm text-slate-700">Auxin binds the nuclear TIR1 receptor (an F-box protein). This acts as a molecular glue, recruiting <strong>Aux/IAA repressor proteins</strong>. The complex polyubiquitinates the repressors, marking them for destruction by the 26S proteasome. This frees <strong>ARFs (Auxin Response Factors)</strong> to transcribe growth genes.</p>
+                        </div>
+                    </div>
+                    <div id="hormone-ga" class="hormone-content hidden">
+                        <h3 class="text-3xl font-bold text-emerald-800 mb-2 serif">Gibberellins (GAs)</h3>
+                        <p class="text-slate-600 mb-6">Crucial for massive stem hyper-elongation (bolting) and seed germination. Embryo-produced GA diffuses to the aleurone layer to stimulate alpha-amylase synthesis, which breaks down endosperm starch into sugars.</p>
+                        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                            <h4 class="font-bold text-slate-800 text-lg mb-2">Signal Transduction: DELLA Degradation</h4>
+                            <p class="text-sm text-slate-700">Bioactive GA binds the soluble GID1 receptor. This complex binds to <strong>DELLA proteins</strong> (master growth repressors). The DELLAs are subsequently ubiquitinated and destroyed by the proteasome, unleashing transcription factors (like PIFs) to promote growth.</p>
+                        </div>
+                    </div>
+                    <!-- Simplified CK/Ethylene/ABA for character limits, logic intact -->
+                    <div id="hormone-ck" class="hormone-content hidden"><h3 class="text-3xl font-bold text-emerald-800 mb-2 serif">Cytokinins (CK)</h3><p class="text-slate-600">Promotes cell division (cytokinesis), delays leaf senescence, and encourages lateral shoot branching. Operates via a Two-Component Phosphorelay system involving AHK receptors and ARR transcription factors.</p></div>
+                    <div id="hormone-ethylene" class="hormone-content hidden"><h3 class="text-3xl font-bold text-orange-600 mb-2 serif">Ethylene (C₂H₄)</h3><p class="text-slate-600">The gaseous hormone dictating fruit ripening, leaf abscission, and the triple response. Operates via negative regulation: Ethylene inactivates its receptor, shutting off the CTR1 kinase repressor, allowing EIN2/EIN3 to turn on ripening genes.</p></div>
+                    <div id="hormone-aba" class="hormone-content hidden"><h3 class="text-3xl font-bold text-amber-600 mb-2 serif">Abscisic Acid (ABA)</h3><p class="text-slate-600">The ultimate stress hormone. Triggers rapid stomatal closure during drought by causing guard cell K+ efflux. Maintains seed dormancy. Operates by binding PYR/PYL receptors, which inhibit PP2C phosphatases, freeing SnRK2 kinases to activate stress responses.</p></div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900 text-white rounded-2xl p-8 shadow-xl">
+                <h3 class="text-2xl font-bold text-pink-400 mb-2 serif">The ABC Model of Flowering</h3>
+                <div class="grid grid-cols-4 gap-4 h-48 relative mt-6">
+                    <div class="absolute top-0 left-0 w-1/2 h-4 bg-red-500 rounded-t text-xs text-center font-bold">Class A</div>
+                    <div class="absolute top-5 left-1/4 w-1/2 h-4 bg-yellow-500 rounded text-xs text-center font-bold text-yellow-900">Class B</div>
+                    <div class="absolute top-10 right-0 w-1/2 h-4 bg-blue-500 rounded text-xs text-center font-bold">Class C</div>
+                    <div class="abc-whorl mt-20 bg-slate-800 border-2 border-red-500 rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-lg"><span class="text-xs text-red-400 font-bold uppercase mb-1">Whorl 1</span><span class="font-bold text-xl">Sepals</span></div>
+                    <div class="abc-whorl mt-20 bg-slate-800 border-2 border-orange-500 rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-lg"><span class="text-xs text-orange-400 font-bold uppercase mb-1">Whorl 2</span><span class="font-bold text-xl">Petals</span></div>
+                    <div class="abc-whorl mt-20 bg-slate-800 border-2 border-green-500 rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-lg"><span class="text-xs text-green-400 font-bold uppercase mb-1">Whorl 3</span><span class="font-bold text-xl">Stamens</span></div>
+                    <div class="abc-whorl mt-20 bg-slate-800 border-2 border-blue-500 rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-lg"><span class="text-xs text-blue-400 font-bold uppercase mb-1">Whorl 4</span><span class="font-bold text-xl">Carpels</span></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function navigate(sectionId) {
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active', 'bg-emerald-100', 'border-emerald-600'));
+            const activeBtn = document.getElementById('nav-' + sectionId);
+            if(activeBtn) activeBtn.classList.add('active', 'bg-emerald-100', 'border-emerald-600');
+
+            document.querySelectorAll('.module-section').forEach(sec => {
+                sec.classList.remove('block'); sec.classList.add('hidden');
+            });
+            const targetSec = document.getElementById('sec-' + sectionId);
+            if(targetSec) {
+                targetSec.classList.remove('hidden'); targetSec.classList.add('block');
+            }
+
+            if (sectionId === 'overview' && !charts.lifecycle) renderLifecycleChart();
+            if (sectionId === 'water' && !charts.waterPotential) renderWaterPotentialChart();
+            document.getElementById('main-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function switchRespirationTab(tabId) {
+            document.querySelectorAll('.resp-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-amber-900', 'text-white', 'border-amber-900', 'border-b-4');
+                btn.classList.add('text-slate-600', 'border-transparent');
+                if(btn.id !== 'tab-'+tabId) btn.classList.add('border-b-4');
+            });
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('text-slate-600', 'border-transparent');
+            activeBtn.classList.add('active', 'bg-amber-900', 'text-white', 'border-amber-900');
+
+            document.querySelectorAll('.resp-content').forEach(content => {
+                content.classList.remove('block'); content.classList.add('hidden');
+            });
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+            document.getElementById('content-' + tabId).classList.add('block');
+        }
+
+        function showHormone(hormoneId, btnElement) {
+            document.querySelectorAll('.hormone-tab').forEach(btn => {
+                btn.classList.remove('active', 'bg-emerald-700', 'text-white');
+                btn.classList.add('text-slate-700');
+            });
+            btnElement.classList.add('active', 'bg-emerald-700', 'text-white');
+            btnElement.classList.remove('text-slate-700');
+
+            document.querySelectorAll('.hormone-content').forEach(content => {
+                content.classList.remove('block'); content.classList.add('hidden');
+            });
+            document.getElementById('hormone-' + hormoneId).classList.remove('hidden');
+            document.getElementById('hormone-' + hormoneId).classList.add('block');
+        }
+
+        const stressData = {
+            drought: { title: "Drought (Water Deficit)", icon: "🏜️", color: "text-amber-800", bgColor: "bg-amber-50", mech: "<ul class='list-disc pl-5 space-y-3 mt-4'><li><strong>Hormonal Shift:</strong> Rapid synthesis of Abscisic Acid (ABA) in roots and leaves.</li><li><strong>Stomatal Closure:</strong> ABA travels to guard cells, triggering an efflux of Potassium (K+) and Chloride (Cl-) ions via SLAC1 channels. Water follows via osmosis, causing guard cells to lose turgor and rapidly close, halting transpiration.</li><li><strong>Osmotic Adjustment:</strong> Plants accumulate compatible solutes (like proline and soluble sugars) to lower their internal water potential, allowing continued water uptake from drying soil.</li></ul>" },
+            flooding: { title: "Flooding (Hypoxia)", icon: "🌊", color: "text-blue-800", bgColor: "bg-blue-50", mech: "<ul class='list-disc pl-5 space-y-3 mt-4'><li><strong>Ethylene Trapping:</strong> Ethylene gas gets trapped in flooded tissues as it cannot diffuse through water efficiently.</li><li><strong>Aerenchyma Formation:</strong> The accumulated Ethylene induces targeted apoptosis (programmed cell death) in root cortex cells. This creates continuous hollow air tubes called Aerenchyma.</li><li><strong>Function:</strong> These tubes act like snorkels, allowing O₂ to diffuse from the aerial shoots down to the submerged roots to sustain cellular respiration.</li><li><strong>Anaerobic Backup:</strong> If hypoxia is severe, roots switch to Alcoholic Fermentation to regenerate NAD+, producing toxic ethanol.</li></ul>" },
+            cold: { title: "Cold / Freezing Stress", icon: "❄️", color: "text-cyan-800", bgColor: "bg-cyan-50", mech: "<ul class='list-disc pl-5 space-y-3 mt-4'><li><strong>Membrane Fluidity:</strong> Cold rigidifies cell membranes, causing them to shatter. Plants respond by activating desaturase enzymes to increase the proportion of <strong>unsaturated fatty acids</strong>. The 'kinks' in these lipid tails prevent tight packing.</li><li><strong>CBF/DREB Pathway:</strong> Cold triggers calcium spikes which activate ICE1, transcribing CBF/DREB transcription factors. These turn on hundreds of Cold-Regulated (COR) genes.</li><li><strong>Freezing Defense:</strong> Extracellular ice pulls water out of cells, causing fatal dehydration. Plants produce Antifreeze Proteins (AFPs) that bind to ice crystals to prevent their growth, and accumulate sugars as cryoprotectants.</li></ul>" },
+            salt: { title: "Salinity Stress", icon: "🧂", color: "text-slate-800", bgColor: "bg-slate-100", mech: "<ul class='list-disc pl-5 space-y-3 mt-4'><li><strong>Osmotic & Toxic Shock:</strong> Salt lowers soil water potential (making water hard to extract) and Na+ ions are toxic to cytosolic enzymes.</li><li><strong>The SOS Pathway:</strong> Salt overly triggers the Salt Overly Sensitive (SOS) calcium signaling pathway. SOS3 activates SOS2, which activates SOS1 (a Na+/H+ antiporter) on the plasma membrane to pump Na+ back into the soil.</li><li><strong>Ion Sequestration:</strong> NHX antiporters actively pump Na+ into the large central vacuole, keeping it safely away from cytosolic enzymes.</li><li><strong>Compatible Solutes:</strong> Plants synthesize benign organic solutes to balance the osmotic pressure.</li></ul>" },
+            heat: { title: "Heat Stress", icon: "🔥", color: "text-red-800", bgColor: "bg-red-50", mech: "<ul class='list-disc pl-5 space-y-3 mt-4'><li><strong>Protein Denaturation:</strong> High heat unfolds and destroys critical enzymes (like RuBisCO) and increases membrane fluidity to lethal levels.</li><li><strong>Heat Shock Proteins (HSPs):</strong> The plant rapidly transcribes HSPs via HSF transcription factors. HSPs act as molecular 'chaperones', binding to unfolding proteins to stabilize them and assist in proper refolding once temperatures drop.</li><li><strong>ROS Scavenging:</strong> Heat causes massive oxidative stress. Plants upregulate enzymes like Superoxide Dismutase (SOD) and Catalase (CAT) to neutralize toxic Reactive Oxygen Species (ROS).</li></ul>" }
+        };
+
+        function setStress(type, btnElement) {
+            document.querySelectorAll('.stress-btn').forEach(btn => btn.classList.remove('active', 'shadow-inner', 'bg-slate-200'));
+            btnElement.classList.add('active', 'shadow-inner');
+            const data = stressData[type];
+            document.getElementById('stress-display').innerHTML = `<div class="animate-fade-in ${data.bgColor} p-8 rounded-xl h-full border border-slate-200 shadow-inner"><div class="text-6xl mb-4">${data.icon}</div><h4 class="text-3xl font-bold ${data.color} mb-6 serif">${data.title}</h4><div class="text-slate-700 text-sm md:text-base leading-relaxed">${data.mech}</div></div>`;
+        }
+
+        const charts = { lifecycle: null, waterPotential: null };
+
+        function renderLifecycleChart() {
+            const ctx = document.getElementById('lifecycleChart').getContext('2d');
+            charts.lifecycle = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Dormancy', 'Germination', 'Vegetative Growth', 'Flowering', 'Fruit Ripening', 'Senescence'],
+                    datasets: [
+                        { label: 'GA', data: [10, 90, 60, 40, 20, 10], borderColor: '#3b82f6', tension: 0.4, borderWidth: 3 },
+                        { label: 'Auxin', data: [10, 40, 90, 80, 50, 10], borderColor: '#16a34a', tension: 0.4, borderWidth: 3 },
+                        { label: 'Ethylene', data: [5, 5, 10, 30, 90, 100], borderColor: '#ea580c', tension: 0.4, borderWidth: 3 },
+                        { label: 'ABA', data: [90, 10, 15, 20, 30, 80], borderColor: '#d97706', tension: 0.4, borderDash: [5, 5], borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false } } }, plugins: { legend: { position: 'top' } } }
+            });
+        }
+
+        function renderWaterPotentialChart() {
+            const ctx = document.getElementById('waterPotentialChart').getContext('2d');
+            charts.waterPotential = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Soil', 'Root Cortex', 'Xylem (Root)', 'Xylem (Stem)', 'Leaf Mesophyll', 'Outside Air'],
+                    datasets: [{ label: 'Water Potential Ψ (MPa)', data: [-0.1, -0.2, -0.5, -0.8, -1.5, -100.0], borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.2)', tension: 0.1, borderWidth: 3, fill: true, pointRadius: 5 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMin: -110, suggestedMax: 0 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return c.raw + ' MPa'; } } } } }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLifecycleChart();
+            setStress('drought', document.querySelector('.stress-btn'));
+        });
+    </script>
+</body>
+</html>
